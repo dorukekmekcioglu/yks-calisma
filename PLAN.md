@@ -14,6 +14,7 @@ Bu belge, sitenin yeniden yapımı için konuşularak alınan kararların tamam�
   - Ana sayfada kalan gün sayısı **yok**.
   - "Yanlış" kelimesi öne çıkmaz: yanlış defteri **"Tekrar edeceklerim"**, sonuçlar "8 bilgi pekişti, 3'ü tekrar listesine eklendi" gibi.
   - Kırmızı alarm renkleri, düşen puan, "seri bozuldu" uyarısı yok.
+    - İstisna (1.0 ara onayı): testte yanlış işaretlenen şık **yumuşak, açık tonlu bir kırmızı** ile gösterilir (alarm değil, sade bir işaret). Doğru şık yumuşak yeşil.
   - İstatistik yargılamaz, yönlendirir: "En zayıf konular" değil **"Biraz ilgi bekleyenler"**.
 - Sıcak, kişisel bir dokunuş: sevgilisinin yazdığı motivasyon notları ve test sonu aşk notları.
 

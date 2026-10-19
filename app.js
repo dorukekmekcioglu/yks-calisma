@@ -162,17 +162,190 @@
     });
   }
 
-  function calisBolumu(sorular) {
+  function calisBolumu(sorular, konuAd) {
     return h("div", { class: "kart" },
       h("h2", null, "Bu konudan yeni test"),
       h("p", { class: "alt" }, sorular.length + " soru hazır."),
       h("button", { class: "dugme", type: "button", style: "margin-top:16px",
-        onclick: function () { mesaj("Test akışı bir sonraki adımda hazır olacak 🌿"); } }, "Teste başla"));
+        onclick: function () { modSec(function (mod) { testBaslat(konuAd, sorular, mod); }); } }, "Teste başla"));
   }
 
   function tekrarBolumu() {
     return yakinda("🌤️", "Şimdilik tekrar bekleyen yok",
       "Bu konudan öğrendiklerin tekrar zamanı gelince burada görünecek.");
+  }
+
+  /* ---------- test akışı ---------- */
+  var HARFLER = ["A", "B", "C", "D", "E"];
+  var T = null; // süren test; yalnızca bellekte
+
+  function karistir(dizi) {
+    var a = dizi.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  // sabit:false olan sorularda şıklar karışır; öncüllü ve sabit olanlarda sıra korunur
+  function soruHazirla(q) {
+    var sira = [0, 1, 2, 3, 4];
+    if (q.sabit === false) sira = karistir(sira);
+    return { q: q, sira: sira, dogruYeri: sira.indexOf(q.dogru) };
+  }
+
+  function titret(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+  // Mod her testin başında seçilir.
+  function modSec(baslat) {
+    var perde = h("div", { class: "perde", onclick: function (e) { if (e.target === perde) perde.remove(); } },
+      h("div", { class: "sheet", role: "dialog", "aria-label": "Test modu" },
+        h("h2", null, "Nasıl çözmek istersin?"),
+        h("button", { class: "mod-secenek", type: "button", onclick: function () { perde.remove(); baslat("anlik"); } },
+          h("b", null, "Anlık geri bildirim"),
+          h("span", null, "Her sorudan sonra cevabı ve dipnotu görürsün.")),
+        h("button", { class: "mod-secenek", type: "button", onclick: function () { perde.remove(); baslat("sonda"); } },
+          h("b", null, "Sonda toplu sonuç"),
+          h("span", null, "Önce hepsini çöz, sonuçları sonunda gör.")),
+        h("button", { class: "link-dugme", type: "button", onclick: function () { perde.remove(); } }, "Vazgeç")));
+    document.body.appendChild(perde);
+  }
+
+  function testGit() {
+    if (location.hash === "#/test") rota(); else location.hash = "#/test";
+  }
+
+  function testBaslat(baslik, sorular, mod) {
+    if (!sorular.length) { mesaj("Burada henüz soru yok, yakında 🌿"); return; }
+    T = { baslik: baslik, mod: mod, liste: sorular.map(soruHazirla), i: 0, secim: [] };
+    testGit();
+  }
+
+  // Ders dosyalarının hepsini yükleyip (olmayanlar sessizce atlanır) soru toplar.
+  function sorulariTopla(filtre, adet, sonra) {
+    var dosyalar = [];
+    KONULAR.forEach(function (k) { if (dosyalar.indexOf(k.dosya) < 0) dosyalar.push(k.dosya); });
+    Promise.all(dosyalar.map(dersYukle)).then(function (hepsi) {
+      var sorular = [];
+      hepsi.forEach(function (v) { sorular = sorular.concat(v.sorular.filter(filtre || function () { return true; })); });
+      sonra(karistir(sorular).slice(0, adet));
+    });
+  }
+
+  function testGorunum() {
+    var kap = h("div", { class: "test-kap" });
+    document.body.classList.add("testte");
+
+    function ciz() {
+      kap.replaceChildren();
+      window.scrollTo(0, 0);
+      if (T.i >= T.liste.length) { sonucCiz(kap); return; }
+      var s = T.liste[T.i], q = s.q;
+      var cevaplandi = T.secim[T.i] != null;
+      var kilitli = T.mod === "anlik" && cevaplandi;
+
+      var ust = h("div", { class: "test-ust" },
+        h("button", { class: "kapat", type: "button", "aria-label": "Testten çık", onclick: function () { location.hash = "#/"; } }, "✕"),
+        h("div", { class: "ilerleme" },
+          h("span", null, (T.i + 1) + " / " + T.liste.length),
+          h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + (T.i / T.liste.length * 100) + "%" }))));
+
+      var soru = h("div", { class: "soru-alani" },
+        h("p", { class: "soru-metin" }, q.soru),
+        q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, o); })) : null);
+
+      var secenekler = h("div", { class: "secenekler" }, s.sira.map(function (orj, poz) {
+        var sinif = "secenek";
+        if (kilitli) {
+          if (poz === s.dogruYeri) sinif += " dogru";
+          else if (poz === T.secim[T.i]) sinif += " tekrar";
+        } else if (cevaplandi && poz === T.secim[T.i]) sinif += " secili";
+        return h("button", { class: sinif, type: "button", disabled: kilitli ? "" : false,
+          onclick: function () {
+            if (kilitli) return;
+            T.secim[T.i] = poz;
+            if (T.mod === "anlik") titret(poz === s.dogruYeri ? 12 : 25);
+            ciz();
+          } },
+          h("span", { class: "harf" }, HARFLER[poz]),
+          h("span", { class: "metin" }, q.secenekler[orj]));
+      }));
+
+      var alt = h("div", { class: "alt-alan" });
+      if (kilitli) {
+        var dogruMu = T.secim[T.i] === s.dogruYeri;
+        alt.appendChild(h("div", { class: "geri-bildirim " + (dogruMu ? "iyi" : "tekrar") },
+          h("b", null, dogruMu ? "Güzel, bu pekişti 🌿" : "Bunu tekrar listene ekledik, birlikte pekiştireceğiz."),
+          q.dipnot ? h("p", null, q.dipnot) : null));
+      }
+      alt.appendChild(secenekler);
+      if (cevaplandi) {
+        alt.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { T.i++; ciz(); } },
+          T.i === T.liste.length - 1 ? "Bitir" : "Devam"));
+      }
+
+      kap.appendChild(ust); kap.appendChild(soru); kap.appendChild(alt);
+    }
+    ciz();
+    return kap;
+  }
+
+  function askNotu(oran) {
+    var basamak = oran < 40 ? "dusuk" : oran < 75 ? "orta" : "yuksek";
+    var liste = (window.ASK_NOTLARI && window.ASK_NOTLARI[basamak]) || [];
+    return liste.length ? rastgele(liste) : null;
+  }
+
+  function sonucCiz(kap) {
+    var n = T.liste.length, dogru = 0, yanlislar = [];
+    T.liste.forEach(function (s, i) {
+      if (T.secim[i] === s.dogruYeri) dogru++; else yanlislar.push(s);
+    });
+    var oran = n ? dogru / n * 100 : 0;
+    var mod = T.mod;
+    var not = askNotu(oran);
+
+    // yanlışın en çok olduğu konu: özetine geçiş için
+    var sayac = {}, enCok = null;
+    yanlislar.forEach(function (s) { sayac[s.q.konu] = (sayac[s.q.konu] || 0) + 1; });
+    Object.keys(sayac).forEach(function (k) { if (!enCok || sayac[k] > sayac[enCok]) enCok = k; });
+    var konu = enCok && KONULAR.filter(function (k) { return k.id === enCok; })[0];
+
+    kap.appendChild(h("header", { class: "ust" }, h("p", { class: "selam" }, T.baslik), h("h1", null, "Tur tamam 🌿")));
+
+    kap.appendChild(h("div", { class: "kart sonuc" },
+      h("p", { class: "buyuk" }, dogru + " / " + n),
+      h("p", null, dogru + " soru pekişti" + (yanlislar.length ? ", " + yanlislar.length + " soru tekrar listesine eklendi." : "."))));
+
+    if (not) {
+      kap.appendChild(h("div", { class: "ask-karti" },
+        h("span", { class: "kalp k1", "aria-hidden": "true" }, "💗"),
+        h("span", { class: "kalp k2", "aria-hidden": "true" }, "💕"),
+        h("span", { class: "kalp k3", "aria-hidden": "true" }, "💖"),
+        h("span", { class: "kalp k4", "aria-hidden": "true" }, "💗"),
+        h("p", null, not)));
+    }
+
+    if (yanlislar.length) {
+      kap.appendChild(h("h2", { class: "bolum-baslik" }, "Tekrar edeceklerim"));
+      yanlislar.forEach(function (s) {
+        kap.appendChild(h("div", { class: "kart tekrar-kart" },
+          h("p", { class: "soru-ozet" }, s.q.soru),
+          h("p", { class: "dogru-cevap" }, "Doğrusu: " + HARFLER[s.dogruYeri] + ") " + s.q.secenekler[s.sira[s.dogruYeri]]),
+          s.q.dipnot ? h("p", { class: "kucuk" }, s.q.dipnot) : null));
+      });
+    }
+
+    var dugmeler = h("div", { class: "sonuc-dugmeler" });
+    if (yanlislar.length) {
+      dugmeler.appendChild(h("button", { class: "dugme", type: "button", onclick: function () {
+        testBaslat("Hızlı tekrar", yanlislar.map(function (s) { return s.q; }), mod);
+      } }, "Bunları hemen tekrar et"));
+    }
+    if (konu) dugmeler.appendChild(h("a", { class: "dugme ikincil", href: "#/konu/" + konu.id + "/ozet" }, "“" + konu.ad + "” özetine bak"));
+    dugmeler.appendChild(h("a", { class: "dugme ikincil", href: "#/" }, "Ana sayfaya dön"));
+    kap.appendChild(dugmeler);
   }
 
   /* ---------- sayfalar ---------- */
@@ -185,11 +358,11 @@
         h("p", { class: "alt" }, bekleyen
           ? "Kısa bir turda hepsine göz atabilirsin."
           : "Şimdilik tekrar bekleyen yok. İstersen yeni bir şeylere bakalım."),
-        h("button", { class: "dugme", type: "button", onclick: function () { mesaj("Kısa tur, test akışıyla birlikte birazdan hazır 🌿"); } },
+        h("button", { class: "dugme", type: "button", onclick: function () { modSec(function (mod) { sorulariTopla(null, 8, function (l) { testBaslat("Kısa bir tur", l, mod); }); }); } },
           "Kısa bir tur ", h("span", { class: "kucuk", style: "color:inherit;opacity:.8" }, "· 2-3 dk")));
 
       var hizli = h("div", { class: "hizli" },
-        h("button", { class: "dugme", type: "button", onclick: function () { mesaj("Karışık test, test akışıyla birlikte birazdan hazır 🌿"); } }, "20 soruluk karışık test"),
+        h("button", { class: "dugme", type: "button", onclick: function () { modSec(function (mod) { sorulariTopla(null, 20, function (l) { testBaslat("Karışık test", l, mod); }); }); } }, "20 soruluk karışık test"),
         h("button", { class: "dugme ikincil", type: "button", onclick: function () { mesaj("Özelleştirme birazdan hazır 🌿"); } }, "Özelleştir"));
 
       return [
@@ -222,7 +395,7 @@
         if (!maddeler.length && !sorular.length) {
           ekle(icerik, yakinda("🌿", "Bu konu hazırlanıyor", "İçerik kaynaklardan hazırlanınca burada olacak."));
         } else if (secili === "ozet") ekle(icerik, ozetBolumu(maddeler));
-        else if (secili === "calis") ekle(icerik, calisBolumu(sorular));
+        else if (secili === "calis") ekle(icerik, calisBolumu(sorular, k.ad));
         else ekle(icerik, tekrarBolumu());
       });
 
@@ -234,6 +407,10 @@
         cubuk,
         icerik
       ];
+    },
+    test: function () {
+      if (!T) { location.replace("#/"); return null; }
+      return testGorunum();
     },
     mola: function () {
       return [
@@ -283,6 +460,7 @@
       if (a.dataset.sekme === (ad === "konu" ? "ana" : ad)) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
+    if (ad !== "test") { T = null; document.body.classList.remove("testte"); }
     var eskiMesaj = document.querySelector(".mesaj");
     if (eskiMesaj) eskiMesaj.remove();
     sayfa.replaceChildren();
