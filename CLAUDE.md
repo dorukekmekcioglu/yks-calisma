@@ -1,22 +1,18 @@
 # YKS Çalışma Köşesi
 
-Kız arkadaşım için yaptığım, YKS'ye ikinci kez hazırlanırken telefondan rahatça kullanabileceği bir soru çözme sitesi. Amaç: temel bilgiyi pekiştiren, sadece okuyarak çözülen ÖSYM YKS standardında sorular; yanlışlarda kısa dipnotlar; sıcak, küçük motivasyon notları.
+Kız arkadaşım için yaptığım, YKS'ye (sayısal) ikinci kez hazırlanırken telefondan rahatça, uzanırken-dinlenirken tekrar yapabileceği bir çalışma sitesi. Amaç: temel ve ezber bilgiyi bol ve çeşitli soruyla pekiştirmek; sıcak, baskısız bir ton.
 
-## Teknik yapı
-- Saf HTML/CSS/JS, derleme yok. GitHub Pages ile yayınlanıyor (main / root).
-- `index.html`: iskelet. `style.css`: tasarım (sade, minimal, açık/koyu mod, mobil öncelikli).
-- `app.js`: ana sayfa, test akışı, sonuç ekranı, localStorage ile ilerleme (hata verirse bellekte çalışır).
-- `questions.js`: DERSLER, KONULAR ve `Q(konu, soru, [5 şık], doğruIndex, dipnot, sabitSıra)` ile yazılan sorular. Şıklar çalışırken karıştırılır; "Yalnız I, I ve II" gibi şıklarda son parametre `true` olmalı.
-- `config.js`: karşılama ismi (`ISIM`) ve motivasyon notları (`NOTLAR`).
-- `sw.js` + `manifest.json`: ana ekrana eklenebilir, çevrimdışı çalışır. Dosya listesi değişirse `sw.js` içindeki `DOSYALAR` ve `CACHE` adını güncelle.
+## Önce PLAN.md'yi oku
+Site yeniden yapılıyor. **Bütün kararlar, sürüm akışı, aşamalı çalışma kuralı ve aşama sırası [PLAN.md](PLAN.md) içindedir.** İşe başlamadan önce oku. Bir karar değişirse önce PLAN.md'yi güncelle.
+
+Şu anki dosyalar (`app.js`, `questions.js`, `config.js` …) eski sürüme aittir. 1.0 onaylanınca yeni yapıyla değiştirilir.
 
 ## Kurallar
-- Dil Türkçe. Sorular ÖSYM üslubunda, 5 şıklı, tek doğru cevaplı olmalı.
-- Her sorunun dipnotu bilgiyi pekiştirmeli, kısa ve öğretici olmalı. Bilgi emin olunmadıkça eklenmemeli, doğruluğu kontrol edilmeli.
-- Tasarım sade kalmalı, telefonda tek elle rahat kullanılmalı (büyük dokunma alanları).
-- Harici kütüphane ve CDN kullanma.
-
-## Yapılacaklar
-- Her konuya daha fazla soru ekle (hedef: konu başı 15-20).
-- Tarih ve Edebiyat derslerini ekle.
-- Konu bazlı ilerleme ve zayıf konu özeti.
+- Dil Türkçe. Sorular ÖSYM üslubunda, 5 şıklı, tek doğru cevaplı.
+- İçerik yalnızca `kaynaklar/` klasöründeki PDF ve slaytlardan üretilir. Emin olunmayan bilgi eklenmez. Kaynak metin ve görseller kopyalanmaz. Depo herkese açık olduğu için `kaynaklar/` asla commit edilmez.
+- Dipnotlar kısa, öğretici ve bilgiyi pekiştiren türden olur.
+- Ton baskısız olur: geri sayım öne çıkmaz, kırmızı uyarı yok, "yanlış" yerine yumuşak bir dil kullanılır.
+- Tasarım sade ve sıcak olur, telefonda tek elle kullanılır (şıklar alt yarıda, büyük dokunma alanları).
+- Saf HTML/CSS/JS kullanılır. Derleme, harici kütüphane, CDN ve harici yazı tipi yok. Hız birinci önceliktir.
+- **Aşamalı çalış:** her aşamadan sonra özetle, kendin test et, telefonda deneme adresi ver ve onay bekle. Onaysız yayına alma (PLAN.md §9).
+- Yayında `sw.js` içindeki önbellek adını ve sürüm numarasını güncelle.
