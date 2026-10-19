@@ -74,17 +74,95 @@
     kayit.yaz("yks-tema", t);
   }
 
+  /* ---------- küçük mesaj ---------- */
+  var mesajZamani;
+  function mesaj(metin) {
+    var eski = document.querySelector(".mesaj");
+    if (eski) eski.remove();
+    var el = h("div", { class: "mesaj", role: "status" }, metin);
+    document.body.appendChild(el);
+    clearTimeout(mesajZamani);
+    mesajZamani = setTimeout(function () { el.remove(); }, 2600);
+  }
+
+  /* ---------- TYT | AYT → ders → konu ---------- */
+  function dersListesi() {
+    var sinav = kayit.oku("yks-sinav", "tyt");
+    var kutu = h("div");
+    var sekme = h("div", { class: "sinav-sekme", role: "tablist" });
+
+    function ciz() {
+      kutu.replaceChildren();
+      Array.prototype.forEach.call(sekme.children, function (b) {
+        b.setAttribute("aria-selected", String(b.dataset.sinav === sinav));
+      });
+      DERSLER.filter(function (d) { return d.sinav === sinav; }).forEach(function (d) {
+        var konular = KONULAR.filter(function (k) { return k.ders === d.id && k.sinav === sinav; });
+        var liste = h("div", { class: "konular" }, konular.map(konuSatiri));
+        if (!konular.length) liste.appendChild(h("p", { class: "kucuk", style: "padding:6px 10px 12px" }, "Bu dersin konuları yakında eklenecek."));
+        kutu.appendChild(h("details", { class: "ders" },
+          h("summary", null,
+            h("span", { class: "ikon", "aria-hidden": "true" }, d.ikon),
+            d.ad,
+            h("span", { class: "say" }, konular.length ? konular.length + " konu" : "")),
+          liste));
+      });
+    }
+
+    [["tyt", "TYT"], ["ayt", "AYT"]].forEach(function (s) {
+      sekme.appendChild(h("button", {
+        type: "button", role: "tab", "data-sinav": s[0],
+        onclick: function () { sinav = s[0]; kayit.yaz("yks-sinav", sinav); ciz(); }
+      }, s[1]));
+    });
+    ciz();
+    return h("div", null, sekme, kutu);
+  }
+
+  function konuSatiri(k) {
+    var yuzde = 0; // gerçek ilerleme adım 5'te (Leitner) gelecek
+    return h("a", { class: "konu", href: "#/konu/" + k.id },
+      h("div", { class: "ust-satir" },
+        h("span", { class: "ad" }, k.ad),
+        k.hazir ? null : h("span", { class: "hazirlaniyor" }, "hazırlanıyor")),
+      h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + yuzde + "%" })));
+  }
+
   /* ---------- sayfalar ---------- */
   var sayfalar = {
     ana: function () {
+      var bekleyen = 0; // tekrarı gelen madde sayısı; Leitner (adım 5) gelince dolacak
+      var bugun = h("div", { class: "kart bugun" },
+        h("h2", null, "Bugün"),
+        h("p", { class: "sayi" }, String(bekleyen), h("small", null, "madde seni bekliyor")),
+        h("p", { class: "alt" }, bekleyen
+          ? "Kısa bir turda hepsine göz atabilirsin."
+          : "Şimdilik tekrar bekleyen yok. İstersen yeni bir şeylere bakalım."),
+        h("button", { class: "dugme", type: "button", onclick: function () { mesaj("Kısa tur, test akışıyla birlikte birazdan hazır 🌿"); } },
+          "Kısa bir tur ", h("span", { class: "kucuk", style: "color:inherit;opacity:.8" }, "· 2-3 dk")));
+
+      var hizli = h("div", { class: "hizli" },
+        h("button", { class: "dugme", type: "button", onclick: function () { mesaj("Karışık test, test akışıyla birlikte birazdan hazır 🌿"); } }, "20 soruluk karışık test"),
+        h("button", { class: "dugme ikincil", type: "button", onclick: function () { mesaj("Özelleştirme birazdan hazır 🌿"); } }, "Özelleştir"));
+
       return [
         h("header", { class: "ust" },
           h("p", { class: "selam" }, selam()),
           h("h1", null, "Bugün biraz tekrar?")),
-        notKarti(),
-        h("h2", { class: "bolum-baslik" }, "Yakında burada"),
-        yakinda("🌿", "Bugün kartı ve Kısa bir tur",
-          "Sıradaki adımda burası dolacak: tekrarı gelenler, hızlı test ve dersler.")
+        bugun,
+        hizli,
+        h("div", { style: "margin-top:12px" }, notKarti()),
+        h("h2", { class: "bolum-baslik" }, "Dersler"),
+        dersListesi()
+      ];
+    },
+    konu: function (arg) {
+      var k = KONULAR.filter(function (x) { return x.id === arg[0]; })[0];
+      return [
+        h("a", { class: "geri", href: "#/" }, "‹ Dersler"),
+        h("header", { class: "ust" }, h("h1", null, k ? k.ad : "Konu bulunamadı")),
+        yakinda("📚", "Özet, Çalış ve Tekrar",
+          "Konu sayfası bir sonraki adımda gelecek.")
       ];
     },
     mola: function () {
@@ -132,7 +210,7 @@
     var yol = (location.hash.replace(/^#\/?/, "") || "ana").split("/");
     var ad = sayfalar[yol[0]] ? yol[0] : "ana";
     document.querySelectorAll(".sekmeler a").forEach(function (a) {
-      if (a.dataset.sekme === ad) a.setAttribute("aria-current", "page");
+      if (a.dataset.sekme === (ad === "konu" ? "ana" : ad)) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
     sayfa.replaceChildren();
