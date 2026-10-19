@@ -120,13 +120,92 @@
   }
 
   function konuSatiri(k) {
-    var yuzde = 0; // gerçek ilerleme adım 5'te (Leitner) gelecek
+    var yuzde = konuYuzde(k.id);
     return h("a", { class: "konu", href: "#/konu/" + k.id },
       h("div", { class: "ust-satir" },
-        h("span", { class: "ad" }, k.ad),
+        h("span", { class: "ad" }, k.ad, rozetVarMi(k.id) ? h("span", { class: "rozet", title: "Bu konuda ustalaştın" }, "🏅") : null),
         k.hazir ? null : h("span", { class: "hazirlaniyor" }, "hazırlanıyor")),
       h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + yuzde + "%" })));
   }
+
+  /* ---------- Leitner ve yerel ilerleme ---------- */
+  // Her bilgi maddesinin bir kutusu (k: 1-5) ve sonraki tekrar günü (s) var.
+  // Doğruda bir üst kutu, yanlışta 1. kutu. 5. kutuda doğru yapılırsa "kalıcı" olur.
+  var ARALIK = [1, 2, 4, 8, 16];
+  var ilerleme = kayit.oku("yks-ilerleme", {});   // { ögeId: {k, s, d, y, t, n, kalici} }
+  var toplamlar = kayit.oku("yks-toplam", {});    // { konuId: öge sayısı }
+  var gecmis = kayit.oku("yks-gecmis", {});       // { "2026-10-20": {c: çözülen, d: doğru} }
+
+  function bugunNo() {
+    var d = new Date();
+    return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
+  }
+  function bugunAnahtar() {
+    var d = new Date();
+    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+  }
+  // Bir sorunun bağlı olduğu bilgi maddeleri; bağlı madde yoksa sorunun kendisi izlenir.
+  function ogeIdleri(q) { return q.maddeler && q.maddeler.length ? q.maddeler : [q.id]; }
+
+  function cevapIsle(q, dogruMu) {
+    var g = bugunNo();
+    ogeIdleri(q).forEach(function (id) {
+      var r = ilerleme[id];
+      if (!r) {
+        r = { k: 1, s: g + ARALIK[0], d: 0, y: 0, t: false, n: q.konu };
+        if (dogruMu) r.d++; else { r.y++; r.t = true; }
+      } else if (!dogruMu) {
+        r.y++; r.t = true; r.k = 1; r.kalici = false; r.s = g + 1;
+      } else {
+        r.d++;
+        if (r.s <= g || r.t) { // yalnızca tekrar zamanı gelmişse (ya da tekrar listesindeyse) kutu atlar
+          if (r.k >= 5) { r.kalici = true; r.s = g + 30; }
+          else { r.k++; r.s = g + ARALIK[r.k - 1]; }
+        }
+        r.t = false;
+      }
+      r.n = q.konu;
+      ilerleme[id] = r;
+    });
+    var a = bugunAnahtar(), gun = gecmis[a] || { c: 0, d: 0 };
+    gun.c++; if (dogruMu) gun.d++;
+    gecmis[a] = gun;
+    kayit.yaz("yks-ilerleme", ilerleme);
+    kayit.yaz("yks-gecmis", gecmis);
+  }
+
+  function bekleyenIdler(konuId) {
+    var g = bugunNo();
+    return Object.keys(ilerleme).filter(function (id) {
+      var r = ilerleme[id];
+      return r.s <= g && (!konuId || r.n === konuId);
+    });
+  }
+
+  // Ders dosyası yüklenince konuların öğe sayısını kaydeder (ana sayfa ilerlemesi için).
+  function toplamlariGuncelle(veri) {
+    var konular = {};
+    function say(konu, id) { (konular[konu] = konular[konu] || {})[id] = 1; }
+    veri.maddeler.forEach(function (m) { say(m.konu, m.id); });
+    veri.sorular.forEach(function (q) { ogeIdleri(q).forEach(function (id) { say(q.konu, id); }); });
+    var degisti = false;
+    Object.keys(konular).forEach(function (k) {
+      var n = Object.keys(konular[k]).length;
+      if (toplamlar[k] !== n) { toplamlar[k] = n; degisti = true; }
+    });
+    if (degisti) kayit.yaz("yks-toplam", toplamlar);
+  }
+
+  function konuYuzde(konuId) {
+    var tp = toplamlar[konuId] || 0, n = 0;
+    if (!tp) return 0;
+    Object.keys(ilerleme).forEach(function (id) {
+      var r = ilerleme[id];
+      if (r.n === konuId && (r.k >= 4 || r.kalici)) n++;
+    });
+    return Math.min(100, Math.round(n / tp * 100));
+  }
+  function rozetVarMi(konuId) { return konuYuzde(konuId) >= 80; }
 
   /* ---------- ders dosyası: derse girilince yüklenir ---------- */
   var yuklenenler = {};
@@ -134,11 +213,14 @@
     if (!yuklenenler[dosya]) {
       yuklenenler[dosya] = new Promise(function (coz) {
         var bos = { maddeler: [], sorular: [] };
-        if (window.ICERIK && window.ICERIK[dosya]) return coz(window.ICERIK[dosya]);
+        if (window.ICERIK && window.ICERIK[dosya]) { toplamlariGuncelle(window.ICERIK[dosya]); return coz(window.ICERIK[dosya]); }
         var el = document.createElement("script");
         el.src = "data/" + dosya + ".js";
-        el.onload = function () { coz((window.ICERIK && window.ICERIK[dosya]) || bos); };
-        el.onerror = function () { delete yuklenenler[dosya]; coz(bos); }; // dosya henüz yok
+        el.onload = function () {
+          var v = (window.ICERIK && window.ICERIK[dosya]) || bos;
+          toplamlariGuncelle(v); coz(v);
+        };
+        el.onerror = function () { coz(bos); }; // dosya henüz yok; tekrar denenmez
         document.head.appendChild(el);
       });
     }
@@ -170,9 +252,22 @@
         onclick: function () { modSec(function (mod) { testBaslat(konuAd, sorular, mod); }); } }, "Teste başla"));
   }
 
-  function tekrarBolumu() {
-    return yakinda("🌤️", "Şimdilik tekrar bekleyen yok",
-      "Bu konudan öğrendiklerin tekrar zamanı gelince burada görünecek.");
+  function tekrarBolumu(k, sorular) {
+    var idler = bekleyenIdler(k.id);
+    var secilen = [];
+    idler.forEach(function (id) {
+      var q = sorular.filter(function (x) { return ogeIdleri(x).indexOf(id) >= 0; })[0];
+      if (q && secilen.indexOf(q) < 0) secilen.push(q);
+    });
+    if (!secilen.length) {
+      return yakinda("🌤️", "Şimdilik tekrar bekleyen yok",
+        "Bu konudan öğrendiklerin tekrar zamanı gelince burada görünecek.");
+    }
+    return h("div", { class: "kart" },
+      h("h2", null, secilen.length + " madde seni bekliyor"),
+      h("p", { class: "alt" }, "Birkaç soruyla hepsini tazeleyelim."),
+      h("button", { class: "dugme", type: "button", style: "margin-top:16px",
+        onclick: function () { modSec(function (mod) { testBaslat(k.ad + " · tekrar", secilen, mod); }); } }, "Tekrar et"));
   }
 
   /* ---------- test akışı ---------- */
@@ -216,21 +311,70 @@
     if (location.hash === "#/test") rota(); else location.hash = "#/test";
   }
 
-  function testBaslat(baslik, sorular, mod) {
+  function testBaslat(baslik, sorular, mod, kisa) {
     if (!sorular.length) { mesaj("Burada henüz soru yok, yakında 🌿"); return; }
-    T = { baslik: baslik, mod: mod, liste: sorular.map(soruHazirla), i: 0, secim: [] };
+    T = { baslik: baslik, mod: mod, liste: sorular.map(soruHazirla), i: 0, secim: [], kayitli: [], kisa: !!kisa };
+    if (kisa) yarimKaydet();
     testGit();
   }
 
-  // Ders dosyalarının hepsini yükleyip (olmayanlar sessizce atlanır) soru toplar.
-  function sorulariTopla(filtre, adet, sonra) {
+  // Ders dosyalarının hepsini yükleyip (olmayanlar sessizce atlanır) karışık soru listesi verir.
+  function tumSorular(sonra) {
     var dosyalar = [];
     KONULAR.forEach(function (k) { if (dosyalar.indexOf(k.dosya) < 0) dosyalar.push(k.dosya); });
     Promise.all(dosyalar.map(dersYukle)).then(function (hepsi) {
       var sorular = [];
-      hepsi.forEach(function (v) { sorular = sorular.concat(v.sorular.filter(filtre || function () { return true; })); });
-      sonra(karistir(sorular).slice(0, adet));
+      hepsi.forEach(function (v) { sorular = sorular.concat(v.sorular); });
+      sonra(karistir(sorular));
     });
+  }
+
+  // Kısa bir tur: önce tekrarı gelen maddeler, boşluk kalırsa hiç görülmemiş sorular.
+  function kisaTurSorulari(hepsi, adet) {
+    var secilen = [];
+    karistir(bekleyenIdler()).forEach(function (id) {
+      if (secilen.length >= adet) return;
+      var adaylar = hepsi.filter(function (q) { return ogeIdleri(q).indexOf(id) >= 0 && secilen.indexOf(q) < 0; });
+      if (adaylar.length) secilen.push(rastgele(adaylar));
+    });
+    hepsi.forEach(function (q) {
+      if (secilen.length < adet && secilen.indexOf(q) < 0 && ogeIdleri(q).every(function (id) { return !ilerleme[id]; })) secilen.push(q);
+    });
+    if (secilen.length < Math.min(adet, 5)) { // yeterli yoksa, tur boş kalmasın diye kalanlardan tamamla
+      hepsi.forEach(function (q) { if (secilen.length < adet && secilen.indexOf(q) < 0) secilen.push(q); });
+    }
+    return secilen;
+  }
+
+  /* ---------- yarım kalan kısa tur ---------- */
+  function yarimKaydet() {
+    if (!T || !T.kisa) return;
+    kayit.yaz("yks-yarim", {
+      baslik: T.baslik, mod: T.mod, i: T.i, secim: T.secim, kayitli: T.kayitli,
+      liste: T.liste.map(function (s) { return { id: s.q.id, sira: s.sira }; })
+    });
+  }
+  function yarimTemizle() { try { localStorage.removeItem("yks-yarim"); } catch (e) {} }
+  function yarimDevam() {
+    var y = kayit.oku("yks-yarim", null);
+    if (!y) return;
+    tumSorular(function (hepsi) {
+      var liste = [];
+      y.liste.forEach(function (o) {
+        var q = hepsi.filter(function (x) { return x.id === o.id; })[0];
+        if (q) liste.push({ q: q, sira: o.sira, dogruYeri: o.sira.indexOf(q.dogru) });
+      });
+      if (liste.length !== y.liste.length || y.i >= liste.length) { yarimTemizle(); mesaj("Yarım kalan tur bulunamadı, yeni bir tane başlatalım 🌿"); return; }
+      T = { baslik: y.baslik, mod: y.mod, liste: liste, i: y.i, secim: y.secim || [], kayitli: y.kayitli || [], kisa: true };
+      testGit();
+    });
+  }
+
+  // Cevap, ilk kez kilitlendiği anda yerel kayda işlenir (aynı soru iki kez sayılmaz).
+  function cevabiKaydet(i) {
+    if (T.kayitli[i] || T.secim[i] == null) return;
+    T.kayitli[i] = true;
+    cevapIsle(T.liste[i].q, T.secim[i] === T.liste[i].dogruYeri);
   }
 
   function testGorunum() {
@@ -265,7 +409,7 @@
           onclick: function () {
             if (kilitli) return;
             T.secim[T.i] = poz;
-            if (T.mod === "anlik") titret(poz === s.dogruYeri ? 12 : 25);
+            if (T.mod === "anlik") { titret(poz === s.dogruYeri ? 12 : 25); cevabiKaydet(T.i); yarimKaydet(); }
             ciz();
           } },
           h("span", { class: "harf" }, HARFLER[poz]),
@@ -281,7 +425,7 @@
       }
       alt.appendChild(secenekler);
       if (cevaplandi) {
-        alt.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { T.i++; ciz(); } },
+        alt.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { cevabiKaydet(T.i); T.i++; yarimKaydet(); ciz(); } },
           T.i === T.liste.length - 1 ? "Bitir" : "Devam"));
       }
 
@@ -298,6 +442,7 @@
   }
 
   function sonucCiz(kap) {
+    if (T.kisa) yarimTemizle();
     var n = T.liste.length, dogru = 0, yanlislar = [];
     T.liste.forEach(function (s, i) {
       if (T.secim[i] === s.dogruYeri) dogru++; else yanlislar.push(s);
@@ -351,18 +496,22 @@
   /* ---------- sayfalar ---------- */
   var sayfalar = {
     ana: function () {
-      var bekleyen = 0; // tekrarı gelen madde sayısı; Leitner (adım 5) gelince dolacak
+      var bekleyen = bekleyenIdler().length;
+      var yarim = kayit.oku("yks-yarim", null);
       var bugun = h("div", { class: "kart bugun" },
         h("h2", null, "Bugün"),
         h("p", { class: "sayi" }, String(bekleyen), h("small", null, "madde seni bekliyor")),
         h("p", { class: "alt" }, bekleyen
           ? "Kısa bir turda hepsine göz atabilirsin."
           : "Şimdilik tekrar bekleyen yok. İstersen yeni bir şeylere bakalım."),
-        h("button", { class: "dugme", type: "button", onclick: function () { modSec(function (mod) { sorulariTopla(null, 8, function (l) { testBaslat("Kısa bir tur", l, mod); }); }); } },
-          "Kısa bir tur ", h("span", { class: "kucuk", style: "color:inherit;opacity:.8" }, "· 2-3 dk")));
+        yarim ? h("button", { class: "dugme", type: "button", onclick: yarimDevam },
+          "Kaldığın yerden devam et ", h("span", { class: "kucuk", style: "color:inherit;opacity:.8" }, "· " + yarim.i + "/" + yarim.liste.length)) : null,
+        h("button", { class: yarim ? "dugme ikincil" : "dugme", type: "button", onclick: function () {
+          modSec(function (mod) { tumSorular(function (hepsi) { testBaslat("Kısa bir tur", kisaTurSorulari(hepsi, 8), mod, true); }); });
+        } }, "Yeni bir kısa tur ", h("span", { class: "kucuk", style: "color:inherit;opacity:.8" }, "· 2-3 dk")));
 
       var hizli = h("div", { class: "hizli" },
-        h("button", { class: "dugme", type: "button", onclick: function () { modSec(function (mod) { sorulariTopla(null, 20, function (l) { testBaslat("Karışık test", l, mod); }); }); } }, "20 soruluk karışık test"),
+        h("button", { class: "dugme", type: "button", onclick: function () { modSec(function (mod) { tumSorular(function (hepsi) { testBaslat("Karışık test", hepsi.slice(0, 20), mod); }); }); } }, "20 soruluk karışık test"),
         h("button", { class: "dugme ikincil", type: "button", onclick: function () { mesaj("Özelleştirme birazdan hazır 🌿"); } }, "Özelleştir"));
 
       return [
@@ -396,14 +545,15 @@
           ekle(icerik, yakinda("🌿", "Bu konu hazırlanıyor", "İçerik kaynaklardan hazırlanınca burada olacak."));
         } else if (secili === "ozet") ekle(icerik, ozetBolumu(maddeler));
         else if (secili === "calis") ekle(icerik, calisBolumu(sorular, k.ad));
-        else ekle(icerik, tekrarBolumu());
+        else ekle(icerik, tekrarBolumu(k, sorular));
       });
 
       return [
         geri,
         h("header", { class: "ust" },
           h("h1", null, k.ad),
-          h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:0%" }))),
+          h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + konuYuzde(k.id) + "%" })),
+          rozetVarMi(k.id) ? h("p", { class: "kucuk", style: "margin-top:8px" }, "🏅 Bu konuda ustalaştın") : null),
         cubuk,
         icerik
       ];
