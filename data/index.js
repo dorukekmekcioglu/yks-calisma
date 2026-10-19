@@ -7,7 +7,7 @@ var DERSLER = [
   { id: "fizik",    ad: "Fizik",      sinav: "tyt", ikon: "🔭" },
   { id: "kimya",    ad: "Kimya",      sinav: "tyt", ikon: "🧪" },
   { id: "biyoloji", ad: "Biyoloji",   sinav: "tyt", ikon: "🌱" },
-  { id: "sosyal",   ad: "TYT Sosyal", sinav: "tyt", ikon: "🗺️" },
+  { id: "sosyal",   ad: "Coğrafya", sinav: "tyt", ikon: "🗺️" },
   { id: "turkce",   ad: "TYT Türkçe", sinav: "tyt", ikon: "📖" },
   { id: "fizik",    ad: "Fizik",      sinav: "ayt", ikon: "🔭" },
   { id: "kimya",    ad: "Kimya",      sinav: "ayt", ikon: "🧪" },

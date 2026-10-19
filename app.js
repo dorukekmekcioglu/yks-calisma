@@ -128,6 +128,53 @@
       h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + yuzde + "%" })));
   }
 
+  /* ---------- ders dosyası: derse girilince yüklenir ---------- */
+  var yuklenenler = {};
+  function dersYukle(dosya) {
+    if (!yuklenenler[dosya]) {
+      yuklenenler[dosya] = new Promise(function (coz) {
+        var bos = { maddeler: [], sorular: [] };
+        if (window.ICERIK && window.ICERIK[dosya]) return coz(window.ICERIK[dosya]);
+        var el = document.createElement("script");
+        el.src = "data/" + dosya + ".js";
+        el.onload = function () { coz((window.ICERIK && window.ICERIK[dosya]) || bos); };
+        el.onerror = function () { delete yuklenenler[dosya]; coz(bos); }; // dosya henüz yok
+        document.head.appendChild(el);
+      });
+    }
+    return yuklenenler[dosya];
+  }
+  window.icerikKaydet = function (dosya, veri) {
+    window.ICERIK = window.ICERIK || {};
+    window.ICERIK[dosya] = { maddeler: veri.maddeler || [], sorular: veri.sorular || [] };
+  };
+
+  function ozetBolumu(maddeler) {
+    var gruplar = [], harita = {};
+    maddeler.forEach(function (m) {
+      if (!harita[m.baslik]) { harita[m.baslik] = []; gruplar.push(m.baslik); }
+      harita[m.baslik].push(m);
+    });
+    return gruplar.map(function (b) {
+      return h("section", { class: "kart ozet" },
+        h("h2", null, b),
+        h("ul", null, harita[b].map(function (m) { return h("li", null, m.bilgi); })));
+    });
+  }
+
+  function calisBolumu(sorular) {
+    return h("div", { class: "kart" },
+      h("h2", null, "Bu konudan yeni test"),
+      h("p", { class: "alt" }, sorular.length + " soru hazır."),
+      h("button", { class: "dugme", type: "button", style: "margin-top:16px",
+        onclick: function () { mesaj("Test akışı bir sonraki adımda hazır olacak 🌿"); } }, "Teste başla"));
+  }
+
+  function tekrarBolumu() {
+    return yakinda("🌤️", "Şimdilik tekrar bekleyen yok",
+      "Bu konudan öğrendiklerin tekrar zamanı gelince burada görünecek.");
+  }
+
   /* ---------- sayfalar ---------- */
   var sayfalar = {
     ana: function () {
@@ -158,11 +205,34 @@
     },
     konu: function (arg) {
       var k = KONULAR.filter(function (x) { return x.id === arg[0]; })[0];
+      var geri = h("a", { class: "geri", href: "#/" }, "‹ Dersler");
+      if (!k) return [geri, h("header", { class: "ust" }, h("h1", null, "Konu bulunamadı"))];
+
+      var sekmeler = [["ozet", "Özet"], ["calis", "Çalış"], ["tekrar", "Tekrar"]];
+      var secili = arg[1] === "calis" || arg[1] === "tekrar" ? arg[1] : "ozet";
+      var icerik = h("div", { class: "konu-icerik" }, h("p", { class: "kucuk" }, "Yükleniyor…"));
+      var cubuk = h("div", { class: "sekme-cubuk", role: "tablist" }, sekmeler.map(function (s) {
+        return h("a", { href: "#/konu/" + k.id + "/" + s[0], role: "tab", "aria-selected": String(secili === s[0]) }, s[1]);
+      }));
+
+      dersYukle(k.dosya).then(function (veri) {
+        var maddeler = veri.maddeler.filter(function (m) { return m.konu === k.id; });
+        var sorular = veri.sorular.filter(function (q) { return q.konu === k.id; });
+        icerik.replaceChildren();
+        if (!maddeler.length && !sorular.length) {
+          ekle(icerik, yakinda("🌿", "Bu konu hazırlanıyor", "İçerik kaynaklardan hazırlanınca burada olacak."));
+        } else if (secili === "ozet") ekle(icerik, ozetBolumu(maddeler));
+        else if (secili === "calis") ekle(icerik, calisBolumu(sorular));
+        else ekle(icerik, tekrarBolumu());
+      });
+
       return [
-        h("a", { class: "geri", href: "#/" }, "‹ Dersler"),
-        h("header", { class: "ust" }, h("h1", null, k ? k.ad : "Konu bulunamadı")),
-        yakinda("📚", "Özet, Çalış ve Tekrar",
-          "Konu sayfası bir sonraki adımda gelecek.")
+        geri,
+        h("header", { class: "ust" },
+          h("h1", null, k.ad),
+          h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:0%" }))),
+        cubuk,
+        icerik
       ];
     },
     mola: function () {
@@ -213,6 +283,8 @@
       if (a.dataset.sekme === (ad === "konu" ? "ana" : ad)) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
+    var eskiMesaj = document.querySelector(".mesaj");
+    if (eskiMesaj) eskiMesaj.remove();
     sayfa.replaceChildren();
     ekle(sayfa, sayfalar[ad](yol.slice(1)));
     // animasyonu her geçişte yeniden oynat

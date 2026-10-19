@@ -28,6 +28,8 @@ TYT ve AYT **ayrı** tutulur. Kapsam ezber ve temel bilgi ağırlıklı kısıml
 | Kimya | TYT + AYT, işlemsiz ve ezber bazlı kısımlar |
 | Fizik | Kavram, formül ve birim bilgisi, kavram yanılgıları (hesap yok) |
 | TYT Sosyal | Coğrafya, tarih, felsefe, din |
+
+> Karar (1.0 ara onayı): TYT Sosyal şimdilik sitede **"Coğrafya"** adıyla görünür, çünkü ilk içerik yalnızca coğrafya. Tarih, felsefe ve din eklenince ders adı yeniden düşünülür.
 | TYT Türkçe | Yazım, noktalama, dil bilgisi |
 
 ### Öncelikli konular (ilk geniş soru havuzu)
