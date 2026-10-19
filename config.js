@@ -1,26 +1,32 @@
 // =====================================================
-//  KİŞİSEL AYARLAR  (burayı istediğin gibi düzenle)
+//  KİŞİSEL AYARLAR VE NOTLAR
+//  Supabase aşamasına (1.6) kadar notlar buradan okunur.
 // =====================================================
 
-// Karşılama mesajında görünecek isim. Boş bırakırsan sadece "Günaydın" yazar.
-const ISIM = "";
+// Karşılamada görünecek isim. Boş bırakılırsa yalnızca "Günaydın" yazar.
+var ISIM = "";
 
-// Ana sayfada rastgele görünen küçük notlar.
-// Kendi notlarını eklemek için listeye yeni satır yazman yeterli.
-const NOTLAR = [
-  "Bugün küçük bir adım bile adımdır. Başlamak işin yarısı. 🌱",
-  "Bir kere daha denediğin için buradasın, bu başlı başına cesaret.",
-  "Hata yapmak öğrenmenin kendisi. Yanlış cevaplar seni geriye değil, ileriye taşıyor.",
-  "Mükemmel olmak zorunda değilsin, sadece dünden biraz daha iyi olman yeter.",
-  "Dinlenmek de çalışmanın bir parçası. Su iç, biraz esne. 💧",
-  "Her doğru cevap beynine bir gülümseme bırakıyor. 🙂",
-  "Zor olan kısmı zaten geçtin: tekrar başlamayı seçtin.",
-  "Şu an çözdüğün her soru sınav günü sana geri dönecek.",
-  "Bugün 10 soru yeter. Küçük ama düzenli olan kazanır. ✨",
-  "Kendine nazik ol. Sen çok emek veriyorsun ve bu görülüyor.",
-  "Bilgi birikir. Bugün öğrendiğin şey, bir ay sonra sana güven olarak döner.",
-  "Yorulursan mola ver, vazgeçme. Mola vermek vazgeçmek değildir.",
-  "Seninle gurur duyuyorum. Bunu bil. 🤍",
-  "Bu sınav seni tanımlamıyor. Ama senin çabanı gösteriyor.",
-  "Bir soruda takılırsan sorun değil, dipnotu oku, bir sonrakine geç.",
+// Motivasyon notları. "sevgili: true" olanlar senin yazdıkların; öncelikli
+// gösterilir ve altında küçük bir kalp çıkar.
+// ⚠️ GEÇİCİ ÖRNEKLER: asıl notlar gelince bu liste değişecek.
+var MOTIVASYON = [
+  { metin: "(örnek not) Bugün küçük bir adım bile adımdır.", sevgili: false },
+  { metin: "(örnek not) Dinlenmek de çalışmanın bir parçası. Su içmeyi unutma.", sevgili: false },
+  { metin: "(örnek not) Yorulursan mola ver; mola vermek vazgeçmek değildir.", sevgili: false },
+  { metin: "(örnek not) Seninle gurur duyuyorum. 🤍", sevgili: true }
 ];
+
+// Test sonu aşk notları, başarı oranına göre 3 basamak.
+// Düşük: %0–40 · Orta: %40–75 · Yüksek: %75–100
+// ⚠️ GEÇİCİ ÖRNEKLER: asıl notlar gelince bu liste değişecek.
+var ASK_NOTLARI = {
+  dusuk: [
+    "(örnek) Pes etmek yok sevgilim, devam et 💗"
+  ],
+  orta: [
+    "(örnek) Çok güzel gidiyorsun, her tur biraz daha 💗"
+  ],
+  yuksek: [
+    "(örnek) İşte böyle! Süpersin doktor hanım 💗"
+  ]
+};

@@ -1,32 +1,28 @@
 (function () {
   "use strict";
 
-  var app = document.getElementById("app");
-  var HARFLER = ["A", "B", "C", "D", "E"];
-  var STORE_KEY = "yks-calisma-v1";
+  var SURUM = "1.0 (geliştirme)";
+  var sayfa = document.getElementById("sayfa");
 
-  /* ---------- kayıt (localStorage yoksa bellekte tutar) ---------- */
-  var state = { cozulen: 0, dogru: 0, yanlis: {}, enIyi: {} };
-  try {
-    var kayit = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
-    if (kayit && typeof kayit === "object") {
-      state.cozulen = kayit.cozulen || 0;
-      state.dogru = kayit.dogru || 0;
-      state.yanlis = kayit.yanlis || {};
-      state.enIyi = kayit.enIyi || {};
+  /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
+  var kayit = {
+    oku: function (anahtar, varsayilan) {
+      try {
+        var v = localStorage.getItem(anahtar);
+        return v == null ? varsayilan : JSON.parse(v);
+      } catch (e) { return varsayilan; }
+    },
+    yaz: function (anahtar, deger) {
+      try { localStorage.setItem(anahtar, JSON.stringify(deger)); } catch (e) {}
     }
-  } catch (e) {}
+  };
 
-  function kaydet() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
-  }
-
-  /* ---------- yardımcılar ---------- */
-  function h(tag, attrs) {
-    var el = document.createElement(tag);
-    attrs = attrs || {};
-    Object.keys(attrs).forEach(function (k) {
-      var v = attrs[k];
+  /* ---------- küçük yardımcılar ---------- */
+  function h(etiket, ozellik) {
+    var el = document.createElement(etiket);
+    ozellik = ozellik || {};
+    Object.keys(ozellik).forEach(function (k) {
+      var v = ozellik[k];
       if (k === "class") el.className = v;
       else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
       else if (v !== false && v != null) el.setAttribute(k, v);
@@ -39,216 +35,113 @@
     if (Array.isArray(c)) { c.forEach(function (x) { ekle(el, x); }); return; }
     el.appendChild(c.nodeType ? c : document.createTextNode(String(c)));
   }
-  function karistir(dizi) {
-    var a = dizi.slice();
-    for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var t = a[i]; a[i] = a[j]; a[j] = t;
-    }
-    return a;
-  }
-  function git(el) {
-    app.replaceChildren(el);
-    window.scrollTo(0, 0);
-  }
-  function konuSorulari(konuId) {
-    return SORULAR.filter(function (q) { return q.konu === konuId; });
-  }
+  function rastgele(dizi) { return dizi[Math.floor(Math.random() * dizi.length)]; }
+
   function selam() {
     var s = new Date().getHours();
     var g = s < 6 ? "İyi geceler" : s < 12 ? "Günaydın" : s < 18 ? "İyi günler" : "İyi akşamlar";
-    return g + (ISIM ? ", " + ISIM : "");
-  }
-  function yanlisSayisi() { return Object.keys(state.yanlis).length; }
-
-  /* ---------- ana sayfa ---------- */
-  function anaSayfa() {
-    var notYazi = h("p", {}, rastgeleNot());
-    var yeniNot = h("button", { class: "link-btn", type: "button", onclick: function () {
-      notYazi.textContent = rastgeleNot(notYazi.textContent);
-    } }, "Başka bir not");
-
-    var oran = state.cozulen ? Math.round((state.dogru / state.cozulen) * 100) + "%" : "-";
-
-    var kok = h("div", {},
-      h("header", {},
-        h("p", { class: "hello" }, selam()),
-        h("h1", {}, "YKS Çalışma Köşesi")
-      ),
-      h("section", { class: "card note" }, notYazi, yeniNot),
-      h("section", { class: "stats" },
-        stat(state.cozulen, "çözülen soru"),
-        stat(oran, "doğru oranı"),
-        stat(yanlisSayisi(), "tekrar bekleyen")
-      ),
-      h("h2", {}, "Hızlı başla"),
-      h("div", { class: "list" },
-        satir("Karışık test", "Tüm konulardan 10 soru", function () {
-          basla(karistir(SORULAR).slice(0, 10), "Karışık test");
-        }, true),
-        satir("Yanlışlarım", yanlisSayisi() ? yanlisSayisi() + " soru seni bekliyor" : "Henüz yanlışın yok, harika!", function () {
-          var liste = SORULAR.filter(function (q) { return state.yanlis[q.id]; });
-          basla(karistir(liste), "Yanlışlarım");
-        }, false, yanlisSayisi() === 0)
-      ),
-      DERSLER.map(function (d) {
-        return h("section", {},
-          h("h2", {}, d.ad),
-          h("div", { class: "list" },
-            KONULAR.filter(function (k) { return k.ders === d.id; }).map(function (k) {
-              var qs = konuSorulari(k.id);
-              var iyi = state.enIyi[k.id];
-              var alt = qs.length + " soru" + (iyi != null ? " · en iyi " + iyi + "/" + qs.length : "");
-              return satir(k.ad, alt, function () { basla(karistir(qs), k.ad, k.id); });
-            })
-          )
-        );
-      }),
-      h("p", { class: "foot" }, "Küçük adımlar, büyük fark. 🌿")
-    );
-    git(kok);
+    return g + (window.ISIM ? ", " + window.ISIM : "");
   }
 
-  var sonNot = "";
-  function rastgeleNot(onceki) {
-    var secenek = NOTLAR.filter(function (n) { return n !== (onceki || sonNot); });
-    var n = secenek[Math.floor(Math.random() * secenek.length)] || NOTLAR[0] || "";
-    sonNot = n;
-    return n;
+  // Sevgilinin notları öncelikli: üçte iki olasılıkla onlardan biri seçilir.
+  function motivasyonNotu() {
+    var liste = window.MOTIVASYON || [];
+    if (!liste.length) return null;
+    var onun = liste.filter(function (n) { return n.sevgili; });
+    var havuz = onun.length && Math.random() < 0.67 ? onun : liste;
+    return rastgele(havuz);
   }
-  function stat(deger, etiket) {
-    return h("div", { class: "card stat" }, h("b", {}, deger), h("span", {}, etiket));
+
+  function notKarti() {
+    var n = motivasyonNotu();
+    if (!n) return null;
+    return h("div", { class: "kart not-kart" },
+      h("p", null, n.metin),
+      n.sevgili ? h("span", { class: "imza" }, "💗") : null);
   }
-  function satir(baslik, alt, tikla, birincil, pasif) {
-    return h("button", {
-      class: "row" + (birincil ? " primary" : ""),
-      type: "button",
-      disabled: pasif ? "" : false,
-      onclick: tikla
+
+  function yakinda(ikon, baslik, metin) {
+    return h("div", { class: "kart yakinda" },
+      h("div", { class: "ikon", "aria-hidden": "true" }, ikon),
+      h("h2", null, baslik),
+      h("p", null, metin));
+  }
+
+  /* ---------- tema ---------- */
+  function temaUygula(t) {
+    if (t === "acik" || t === "koyu") document.documentElement.dataset.tema = t;
+    else delete document.documentElement.dataset.tema;
+    kayit.yaz("yks-tema", t);
+  }
+
+  /* ---------- sayfalar ---------- */
+  var sayfalar = {
+    ana: function () {
+      return [
+        h("header", { class: "ust" },
+          h("p", { class: "selam" }, selam()),
+          h("h1", null, "Bugün biraz tekrar?")),
+        notKarti(),
+        h("h2", { class: "bolum-baslik" }, "Yakında burada"),
+        yakinda("🌿", "Bugün kartı ve Kısa bir tur",
+          "Sıradaki adımda burası dolacak: tekrarı gelenler, hızlı test ve dersler.")
+      ];
     },
-      h("span", {}, baslik, h("small", {}, alt)),
-      h("span", { class: "chev", "aria-hidden": "true" }, "›")
-    );
-  }
-
-  /* ---------- test ---------- */
-  function hazirla(q) {
-    var secenekler = q.secenekler.map(function (t, i) { return { t: t, ok: i === q.dogru }; });
-    if (!q.sabit) secenekler = karistir(secenekler);
-    return { q: q, secenekler: secenekler };
-  }
-
-  function basla(liste, baslik, konuId) {
-    if (!liste.length) { anaSayfa(); return; }
-    var sorular = liste.map(hazirla);
-    var sira = 0;
-    var dogruSayisi = 0;
-    var yanlislar = [];
-
-    function goster() {
-      var p = sorular[sira];
-      var cevaplandi = false;
-      var optBtns = [];
-      var geri = h("div", { id: "geri" });
-
-      var sonraki = h("button", { class: "row primary next", type: "button", onclick: function () {
-        sira++;
-        if (sira < sorular.length) goster(); else sonuc();
-      } }, h("span", {}, sira === sorular.length - 1 ? "Sonucu gör" : "Sonraki soru"), h("span", { class: "chev" }, "›"));
-
-      p.secenekler.forEach(function (s, i) {
-        var b = h("button", { class: "opt", type: "button", onclick: function () { sec(i); } },
-          h("span", { class: "l" }, HARFLER[i]),
-          h("span", {}, s.t)
-        );
-        optBtns.push(b);
+    mola: function () {
+      return [
+        h("header", { class: "ust" }, h("h1", null, "Mola")),
+        yakinda("☕", "Kafa dağıtma köşesi",
+          "Başkentler, haritada ülke bulma ve Türkiye illeri buraya gelecek.")
+      ];
+    },
+    "gozden-gecir": function () {
+      return [
+        h("header", { class: "ust" }, h("h1", null, "Gözden Geçir")),
+        yakinda("📒", "Tekrar edeceklerim ve favoriler",
+          "Tekrar listesi, favoriler ve sade istatistikler buraya gelecek.")
+      ];
+    },
+    profil: function () {
+      var secili = kayit.oku("yks-tema", "sistem");
+      var secenekler = [["acik", "Açık"], ["koyu", "Koyu"], ["sistem", "Sistem"]];
+      var grup = h("div", { class: "secim", role: "group", "aria-label": "Tema" });
+      secenekler.forEach(function (s) {
+        grup.appendChild(h("button", {
+          type: "button",
+          "aria-pressed": String(secili === s[0]),
+          onclick: function () {
+            temaUygula(s[0]);
+            Array.prototype.forEach.call(grup.children, function (b) { b.setAttribute("aria-pressed", "false"); });
+            this.setAttribute("aria-pressed", "true");
+          }
+        }, s[1]));
       });
-
-      function sec(i) {
-        if (cevaplandi) return;
-        cevaplandi = true;
-        var dogruMu = p.secenekler[i].ok;
-        state.cozulen++;
-        if (dogruMu) { state.dogru++; dogruSayisi++; delete state.yanlis[p.q.id]; }
-        else { state.yanlis[p.q.id] = true; yanlislar.push(p); }
-        kaydet();
-
-        optBtns.forEach(function (b, j) {
-          b.disabled = true;
-          if (p.secenekler[j].ok) b.classList.add("ok");
-          else if (j === i) b.classList.add("no");
-          else b.classList.add("dim");
-        });
-
-        var dogruHarf = HARFLER[p.secenekler.findIndex(function (s) { return s.ok; })];
-        geri.replaceChildren(
-          h("div", { class: "feedback " + (dogruMu ? "good" : "bad"), role: "status" },
-            h("strong", {}, dogruMu ? "Doğru! 🎉" : "Olsun, şimdi öğrendin. Doğru cevap: " + dogruHarf),
-            h("p", { class: "dn" }, h("b", {}, "Dipnot: "), p.q.not)
-          ),
-          sonraki
-        );
-        geri.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-
-      git(h("div", {},
-        h("div", { class: "topbar" },
-          h("button", { class: "back", type: "button", onclick: anaSayfa }, "‹ Ana sayfa"),
-          h("span", { class: "count" }, (sira + 1) + " / " + sorular.length)
-        ),
-        h("div", { class: "bar", "aria-hidden": "true" }, h("i", { style: "width:" + (sira / sorular.length) * 100 + "%" })),
-        h("p", { class: "q-title" }, baslik),
-        h("p", { class: "q-text" }, p.q.soru),
-        h("div", { class: "opts" }, optBtns),
-        geri
-      ));
+      return [
+        h("header", { class: "ust" }, h("h1", null, "Profil")),
+        h("div", { class: "kart" },
+          h("h2", null, "Görünüm"),
+          h("p", { class: "alt" }, "Açık, koyu ya da telefonun ayarına göre."),
+          h("div", { style: "margin-top:14px" }, grup)),
+        h("p", { class: "surum" }, "Sürüm " + SURUM)
+      ];
     }
+  };
 
-    function sonuc() {
-      if (konuId) {
-        var onceki = state.enIyi[konuId];
-        if (onceki == null || dogruSayisi > onceki) { state.enIyi[konuId] = dogruSayisi; kaydet(); }
-      }
-      var oran = dogruSayisi / sorular.length;
-      var mesaj = oran === 1 ? "Tam puan! Bu konuyu cebine koydun. 🌟"
-        : oran >= 0.7 ? "Çok iyi gidiyorsun, sağlam bir tur oldu."
-        : oran >= 0.4 ? "İyi bir başlangıç. Dipnotlar sayesinde bir sonraki tur daha iyi olacak."
-        : "Zor bir turdu ama şimdi dipnotları okudun, bu bile kazanç. 🌱";
-
-      git(h("div", {},
-        h("div", { class: "topbar" },
-          h("button", { class: "back", type: "button", onclick: anaSayfa }, "‹ Ana sayfa"),
-          h("span", { class: "count" }, baslik)
-        ),
-        h("section", { class: "card score" },
-          h("div", { class: "big" }, dogruSayisi + " / " + sorular.length),
-          h("p", {}, mesaj)
-        ),
-        yanlislar.length ? h("div", {},
-          h("h2", {}, "Tekrar bakalım"),
-          h("div", { class: "review" }, yanlislar.map(function (p) {
-            var dogruMetin = p.secenekler.filter(function (s) { return s.ok; })[0].t;
-            return h("div", { class: "card" },
-              h("p", { class: "qq" }, p.q.soru),
-              h("p", { class: "aa" }, "Doğru cevap: " + dogruMetin),
-              h("p", { class: "nn" }, p.q.not)
-            );
-          }))
-        ) : null,
-        h("div", { class: "list", style: "margin-top:20px" },
-          yanlislar.length ? satir("Yanlışlarımı tekrar çöz", yanlislar.length + " soru", function () {
-            basla(karistir(yanlislar.map(function (p) { return p.q; })), "Yanlışlarım");
-          }, true) : null,
-          satir("Bu testi yeniden çöz", "Sorular yeniden karışır", function () {
-            basla(karistir(liste), baslik, konuId);
-          }),
-          satir("Ana sayfa", "Başka bir konu seç", anaSayfa)
-        )
-      ));
-    }
-
-    goster();
+  /* ---------- yönlendirme (#/mola gibi adresler; geri tuşu çalışır) ---------- */
+  function rota() {
+    var yol = (location.hash.replace(/^#\/?/, "") || "ana").split("/");
+    var ad = sayfalar[yol[0]] ? yol[0] : "ana";
+    document.querySelectorAll(".sekmeler a").forEach(function (a) {
+      if (a.dataset.sekme === ad) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    });
+    sayfa.replaceChildren();
+    ekle(sayfa, sayfalar[ad](yol.slice(1)));
+    // animasyonu her geçişte yeniden oynat
+    sayfa.style.animation = "none"; void sayfa.offsetWidth; sayfa.style.animation = "";
+    window.scrollTo(0, 0);
   }
 
-  anaSayfa();
+  window.addEventListener("hashchange", rota);
+  rota();
 })();
