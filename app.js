@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev32"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev33"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -918,7 +918,26 @@
     kap.appendChild(h("button", { class: "oyun-kart", type: "button", onclick: function () { molaHarita(kap, "dokun", kita); } },
       h("span", { class: "oyun-ikon", "aria-hidden": "true" }, "👆"),
       h("span", { class: "oyun-metin" }, h("b", null, "Haritada göster"), h("small", null, "Adı verilen ülkeye dokun"))));
-    kap.appendChild(h("p", { class: "kucuk", style: "margin:14px 4px 0" }, "Türkiye'nin dağ, ova ve platoları ile dünya haritasında boğaz, deniz oyunları da yolda."));
+    // Türkiye yer şekilleri
+    var trTur = kayit.oku("yks-mola-trtur", "hepsi");
+    var trGrup = h("div", { class: "etiketler" });
+    function trCiz() {
+      trGrup.replaceChildren();
+      (window.TR_TURLER || [["hepsi", "Hepsi"], ["dag", "Dağlar"], ["ova", "Ovalar"], ["plato", "Platolar"], ["gol", "Göller"], ["akarsu", "Akarsular"]]).forEach(function (x) {
+        trGrup.appendChild(h("button", { class: "etiket secilebilir", type: "button", "aria-pressed": String(trTur === x[0]),
+          onclick: function () { trTur = x[0]; kayit.yaz("yks-mola-trtur", trTur); trCiz(); } }, x[1]));
+      });
+    }
+    trCiz();
+    kap.appendChild(h("h2", { class: "bolum-baslik" }, "Türkiye'nin yer şekilleri"));
+    kap.appendChild(trGrup);
+    kap.appendChild(h("button", { class: "oyun-kart", type: "button", onclick: function () { molaTurkiye(kap, "ad", trTur); } },
+      h("span", { class: "oyun-ikon", "aria-hidden": "true" }, "⛰️"),
+      h("span", { class: "oyun-metin" }, h("b", null, "İşaretli yer hangisi?"), h("small", null, "Haritadaki yerin adını seç"))));
+    kap.appendChild(h("button", { class: "oyun-kart", type: "button", onclick: function () { molaTurkiye(kap, "dokun", trTur); } },
+      h("span", { class: "oyun-ikon", "aria-hidden": "true" }, "📍"),
+      h("span", { class: "oyun-metin" }, h("b", null, "Haritada göster"), h("small", null, "Adı verilen yere dokun"))));
+    kap.appendChild(h("p", { class: "kucuk", style: "margin:14px 4px 0" }, "Konumlar yaklaşıktır; dokunma oyununda biraz pay verilir. Dünya haritasında boğaz ve deniz oyunu da yolda."));
   }
 
   function molaTur(kap, yon, kita) {
@@ -1085,6 +1104,132 @@
           h("p", { class: "alt" }, kacan.length ? "Şunlara bir daha göz atalım:" : "Hepsi yerli yerinde, harika 🌿")));
         if (kacan.length) kap.appendChild(h("div", { class: "kart" }, kacan.map(function (x) { return h("p", { class: "kacan" }, h("b", null, x[0])); })));
         kap.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { molaHarita(kap, mod, kita); } }, "Bir tur daha"));
+        kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Mola menüsü"));
+      }
+      ciz();
+    });
+  }
+
+  /* ---------- Mola: Türkiye yer şekilleri ---------- */
+  var trSozu = null;
+  function trYukle() {
+    if (window.TR_YERLER) return haritaYukle();
+    if (!trSozu) {
+      trSozu = new Promise(function (coz) {
+        var el = document.createElement("script");
+        el.src = "data/turkiye-yer.js";
+        el.onload = el.onerror = function () { coz(); };
+        document.head.appendChild(el);
+      });
+    }
+    return trSozu.then(haritaYukle);
+  }
+  var TR_ISIM = { dag: "dağ", ova: "ova", plato: "plato", gol: "göl", akarsu: "akarsu" };
+
+  function molaTurkiye(kap, mod, tur) {
+    kap.replaceChildren();
+    kap.appendChild(h("p", { class: "kucuk" }, "Harita hazırlanıyor…"));
+    trYukle().then(function () {
+      var hr = window.HARITALAR && window.HARITALAR.turkiye, tum = window.TR_YERLER;
+      if (!hr || !tum) { kap.replaceChildren(); kap.appendChild(h("p", { class: "kucuk" }, "Harita yüklenemedi, biraz sonra tekrar dene.")); return; }
+      var havuz = tum.filter(function (y) { return tur === "hepsi" || y[1] === tur; });
+      var N = Math.min(10, havuz.length);
+      var sorular = karistir(havuz).slice(0, N);
+      var X = function (lon) { return (lon - hr.lon0) * hr.sx; };
+      var Y = function (lat) { return (hr.lat0 - lat) * hr.sy; };
+      var i = 0, dogru = 0, kacan = [];
+
+      function cizgiMi(y) { return Array.isArray(y[2][0]); }
+      function uzaklik(y, lon, lat) { // derece (boylam enleme göre küçültülmüş)
+        var k = 0.78;
+        function nok(a, b) { return Math.sqrt(Math.pow((a[0] - b[0]) * k, 2) + Math.pow(a[1] - b[1], 2)); }
+        if (!cizgiMi(y)) return nok(y[2], [lon, lat]);
+        var en = 1e9;
+        for (var q = 0; q < y[2].length - 1; q++) {
+          var a = y[2][q], b = y[2][q + 1];
+          var ax = a[0] * k, ay = a[1], bx = b[0] * k, by = b[1], px = lon * k, py = lat;
+          var dx = bx - ax, dy = by - ay, t = dx || dy ? ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy) : 0;
+          t = Math.max(0, Math.min(1, t));
+          en = Math.min(en, Math.sqrt(Math.pow(px - (ax + t * dx), 2) + Math.pow(py - (ay + t * dy), 2)));
+        }
+        return en;
+      }
+      function haritaCizTR(y, goster, renk) {
+        var sv = svgEl("svg", { viewBox: "0 0 " + hr.w + " " + hr.h, class: "ulke-harita", role: "img", "aria-label": "Türkiye haritası" });
+        sv.appendChild(svgEl("rect", { width: hr.w, height: hr.h, fill: "var(--yuzey-2)" }));
+        if (hr.komsu) sv.appendChild(svgEl("path", { d: hr.komsu, fill: "var(--cizgi)", stroke: "var(--yuzey)", "stroke-width": ".8" }));
+        sv.appendChild(svgEl("path", { d: hr.yol, fill: "var(--vurgu-acik)", stroke: "var(--vurgu)", "stroke-width": "1.2", "stroke-linejoin": "round" }));
+        if (goster) isaretle(sv, y, renk || "var(--vurgu)");
+        return sv;
+      }
+      function isaretle(sv, y, renk) {
+        if (cizgiMi(y)) {
+          var d = y[2].map(function (p, q) { return (q ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1); }).join("");
+          sv.appendChild(svgEl("path", { d: d, fill: "none", stroke: "var(--yuzey)", "stroke-width": "9", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".7" }));
+          sv.appendChild(svgEl("path", { d: d, fill: "none", stroke: renk, "stroke-width": "5", "stroke-linecap": "round", "stroke-linejoin": "round" }));
+        } else {
+          sv.appendChild(svgEl("circle", { cx: X(y[2][0]), cy: Y(y[2][1]), r: 11, fill: renk, stroke: "var(--yuzey)", "stroke-width": "3" }));
+        }
+      }
+
+      function ciz() {
+        kap.replaceChildren();
+        if (i >= N) { sonuc(); return; }
+        var y = sorular[i], bitti = false;
+        var geri = h("div", { class: "geri-yer" });
+        var devam = h("button", { class: "dugme", type: "button", hidden: "", onclick: function () { i++; ciz(); } }, i === N - 1 ? "Bitir" : "Devam");
+        kap.appendChild(h("div", { class: "mola-ust" },
+          h("button", { class: "kapat", type: "button", "aria-label": "Molaya dön", onclick: function () { molaMenu(kap); } }, "✕"),
+          h("span", { class: "kucuk" }, (i + 1) + " / " + N)));
+        if (mod === "ad") {
+          var ayni = havuz.filter(function (x) { return x !== y && x[1] === y[1]; });
+          if (ayni.length < 4) ayni = tum.filter(function (x) { return x !== y && x[1] === y[1]; });
+          var sec = karistir([y[0]].concat(karistir(ayni).slice(0, 4).map(function (x) { return x[0]; })));
+          kap.appendChild(h("div", { class: "kart mola-soru" }, h("p", { class: "soru-metin" }, "İşaretli " + TR_ISIM[y[1]] + " hangisi?")));
+          kap.appendChild(h("div", { class: "harita-kutu" }, haritaCizTR(y, true)));
+          var kutu = h("div", { class: "secenekler" });
+          sec.forEach(function (m, p) {
+            kutu.appendChild(h("button", { class: "secenek", type: "button", onclick: function () {
+              if (bitti) return; bitti = true; titret(m === y[0] ? 12 : 25);
+              Array.prototype.forEach.call(kutu.children, function (bb, q) {
+                bb.disabled = true;
+                if (sec[q] === y[0]) bb.classList.add("dogru"); else if (q === p) bb.classList.add("tekrar");
+              });
+              if (m === y[0]) { dogru++; geri.textContent = "Güzel 🌿"; } else { kacan.push(y); geri.textContent = "Doğrusu: " + y[0]; }
+              devam.hidden = false;
+            } }, h("span", { class: "harf", "aria-hidden": "true" }, HARFLER[p]), h("span", { class: "metin" }, m)));
+          });
+          kap.appendChild(kutu);
+        } else {
+          kap.appendChild(h("div", { class: "kart mola-soru" }, h("p", { class: "soru-metin" }, "Haritada " + y[0] + " nerede?")));
+          var sv = haritaCizTR(y, false);
+          sv.style.touchAction = "manipulation";
+          sv.addEventListener("click", function (e) {
+            if (bitti) return; bitti = true;
+            var r = sv.getBoundingClientRect();
+            var olcek = Math.max(hr.w / r.width, hr.h / r.height);
+            var px = (e.clientX - r.left - (r.width - hr.w / olcek) / 2) * olcek, py = (e.clientY - r.top - (r.height - hr.h / olcek) / 2) * olcek;
+            var lon = px / hr.sx + hr.lon0, lat = hr.lat0 - py / hr.sy;
+            var tamam = uzaklik(y, lon, lat) <= (y[3] || 0.4) * 1.3;
+            titret(tamam ? 12 : 25);
+            isaretle(sv, y, "var(--iyi)");
+            sv.appendChild(svgEl("circle", { cx: px, cy: py, r: 8, fill: tamam ? "var(--iyi)" : "var(--tekrar)", stroke: "var(--yuzey)", "stroke-width": "3" }));
+            if (tamam) { dogru++; geri.textContent = "Güzel 🌿"; } else { kacan.push(y); geri.textContent = "Yeşil işaretli yer " + y[0] + "."; }
+            devam.hidden = false;
+          });
+          kap.appendChild(h("div", { class: "harita-kutu" }, sv));
+        }
+        kap.appendChild(geri);
+        kap.appendChild(devam);
+      }
+
+      function sonuc() {
+        kap.replaceChildren();
+        kap.appendChild(h("div", { class: "kart" },
+          h("h2", null, N + " sorudan " + dogru + "'i oturdu"),
+          h("p", { class: "alt" }, kacan.length ? "Şunlara bir daha göz atalım:" : "Hepsi yerli yerinde, harika 🌿")));
+        if (kacan.length) kap.appendChild(h("div", { class: "kart" }, kacan.map(function (x) { return h("p", { class: "kacan" }, h("b", null, x[0]), " · " + TR_ISIM[x[1]]); })));
+        kap.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { molaTurkiye(kap, mod, tur); } }, "Bir tur daha"));
         kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Mola menüsü"));
       }
       ciz();
@@ -1449,7 +1594,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev32" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev33" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",
