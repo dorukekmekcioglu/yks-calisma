@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev6"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev7"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -505,6 +505,7 @@
   /* ---------- test akışı ---------- */
   var HARFLER = ["A", "B", "C", "D", "E"];
   var T = null; // süren test; yalnızca bellekte
+  var sonSayfa = "#/"; // teste girilmeden önceki sayfa: X ile oraya dönülür
 
   function karistir(dizi) {
     var a = dizi.slice();
@@ -622,7 +623,7 @@
       var kilitli = T.mod === "anlik" && cevaplandi;
 
       var ust = h("div", { class: "test-ust" },
-        h("button", { class: "kapat", type: "button", "aria-label": "Testten çık", onclick: function () { location.hash = "#/"; } }, "✕"),
+        h("button", { class: "kapat", type: "button", "aria-label": "Testten çık", onclick: function () { location.hash = sonSayfa || "#/"; } }, "✕"),
         h("div", { class: "ilerleme" },
           h("span", null, (T.i + 1) + " / " + T.liste.length),
           h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + (T.i / T.liste.length * 100) + "%" }))));
@@ -893,7 +894,7 @@
       if (a.dataset.sekme === (ad === "konu" ? "ana" : ad)) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
-    if (ad !== "test") { T = null; document.body.classList.remove("testte"); }
+    if (ad !== "test") { T = null; document.body.classList.remove("testte"); sonSayfa = location.hash || "#/"; }
     var eskiMesaj = document.querySelector(".mesaj");
     if (eskiMesaj) eskiMesaj.remove();
     sayfa.replaceChildren();
@@ -907,7 +908,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev6" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev7" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",

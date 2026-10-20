@@ -331,8 +331,8 @@ a.link-dugme { display: block; text-align: center; text-decoration: none; }
 .karakter .goz { animation: kar-gozlerini-kirp 4.8s infinite; transform-origin: 100px 110px; }
 .karakter .isinlar { animation: kar-don 48s linear infinite; transform-origin: 100px 104px; }
 .karakter .yildiz { animation: kar-parla 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.karakter .dil { animation: kar-dil 2.4s ease-in-out infinite; transform-origin: 100px 148px; }
-@keyframes kar-dil { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.18); } }
+.karakter .dil { opacity: 0; animation: kar-dil 11s ease-in-out infinite; transform-origin: 100px 148px; }
+@keyframes kar-dil { 0%, 70%, 100% { opacity: 0; transform: scaleY(.4); } 76%, 88% { opacity: 1; transform: scaleY(1); } }
 .karakter .ay { animation: kar-nefes 5s ease-in-out infinite; }
 @keyframes kar-nefes { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 @keyframes kar-el { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(14deg); } }

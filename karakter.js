@@ -55,6 +55,9 @@ function karakterSvg(gece) {
       '<path d="M148 84C162 60 154 38 138 36C124 44 116 62 118 82Z" fill="' + K + '"/>' +
       '<path d="M62 44C52 60 56 70 62 76" stroke="#454553" stroke-width="3" stroke-linecap="round" fill="none"/>' +
       '<path d="M138 44C148 60 144 70 138 76" stroke="#454553" stroke-width="3" stroke-linecap="round" fill="none"/>' +
+      // boyun ve göğüs: baş ile gövde arasını kapatır
+      '<ellipse cx="100" cy="168" rx="46" ry="28" fill="' + K + '"/>' +
+      '<path d="M82 156Q100 180 118 156L124 190H76Z" fill="' + B + '"/>' +
       // baş: siyah, ortada beyaz şerit ve beyaz ağız
       '<ellipse cx="100" cy="112" rx="50" ry="46" fill="' + K + '"/>' +
       '<path d="M92 62Q100 58 108 62L112 104Q124 120 124 134Q124 158 100 160Q76 158 76 134Q76 120 88 104Z" fill="' + B + '"/>' +
