@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev31"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev32"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -912,7 +912,13 @@
     kap.appendChild(h("h2", { class: "bolum-baslik" }, "Oyunlar"));
     kap.appendChild(oyunKart("🏛️", "Başkent bul", "Ülkenin başkentini seç", "ub"));
     kap.appendChild(oyunKart("🌍", "Hangi ülke?", "Başkentin hangi ülkenin olduğunu seç", "bu"));
-    kap.appendChild(h("p", { class: "kucuk", style: "margin:14px 4px 0" }, "Haritada ülke bulma ve Türkiye illeri de yakında."));
+    kap.appendChild(h("button", { class: "oyun-kart", type: "button", onclick: function () { molaHarita(kap, "ad", kita); } },
+      h("span", { class: "oyun-ikon", "aria-hidden": "true" }, "🗺️"),
+      h("span", { class: "oyun-metin" }, h("b", null, "Haritada hangisi?"), h("small", null, "Renkli ülkenin adını seç"))));
+    kap.appendChild(h("button", { class: "oyun-kart", type: "button", onclick: function () { molaHarita(kap, "dokun", kita); } },
+      h("span", { class: "oyun-ikon", "aria-hidden": "true" }, "👆"),
+      h("span", { class: "oyun-metin" }, h("b", null, "Haritada göster"), h("small", null, "Adı verilen ülkeye dokun"))));
+    kap.appendChild(h("p", { class: "kucuk", style: "margin:14px 4px 0" }, "Türkiye'nin dağ, ova ve platoları ile dünya haritasında boğaz, deniz oyunları da yolda."));
   }
 
   function molaTur(kap, yon, kita) {
@@ -972,6 +978,117 @@
       kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Mola menüsü"));
     }
     ciz();
+  }
+
+  /* ---------- Mola: haritada ülke ---------- */
+  var KITA_KUTU = { // [boylam0, boylam1, enlem0, enlem1]
+    hepsi: [-170, 180, -58, 84], av: [-25, 45, 34, 72], as: [25, 150, -11, 58], af: [-20, 52, -36, 38],
+    ka: [-140, -50, 6, 72], ga: [-83, -33, -57, 14], ok: [110, 180, -48, 0]
+  };
+  var ulkeSozu = null;
+  function ulkeYukle() {
+    if (window.ULKE_HARITA) return Promise.resolve();
+    if (!ulkeSozu) {
+      ulkeSozu = new Promise(function (coz) {
+        var el = document.createElement("script");
+        el.src = "data/ulkeler.js";
+        el.onload = el.onerror = function () { coz(); };
+        document.head.appendChild(el);
+      });
+    }
+    return ulkeSozu;
+  }
+
+  function molaHarita(kap, mod, kita) {
+    kap.replaceChildren();
+    kap.appendChild(h("p", { class: "kucuk" }, "Harita hazırlanıyor…"));
+    ulkeYukle().then(function () {
+      var H = window.ULKE_HARITA;
+      if (!H) { kap.replaceChildren(); kap.appendChild(h("p", { class: "kucuk" }, "Harita yüklenemedi, biraz sonra tekrar dene.")); return; }
+      var esik = mod === "dokun" ? 6 : 1.5;
+      var kitaSec = kita === "hepsi" ? null : kita;
+      var havuz = H.adli.filter(function (u) { return (!kitaSec || u[1] === kitaSec) && u[2] >= (kitaSec ? esik : esik * 3); });
+      if (havuz.length < 6) havuz = H.adli.filter(function (u) { return u[2] >= esik * 2; });
+      var N = Math.min(10, havuz.length);
+      var kutu = KITA_KUTU[kitaSec || "hepsi"];
+      var vb = [(kutu[0] + 180) * 2, (84 - kutu[3]) * 2, (kutu[1] - kutu[0]) * 2, (kutu[3] - kutu[2]) * 2].join(" ");
+      var sorular = karistir(havuz).slice(0, N);
+      var i = 0, dogru = 0, kacan = [];
+
+      function haritaKur(hedef, tikla) {
+        var sv = svgEl("svg", { viewBox: vb, class: "ulke-harita", role: "img", "aria-label": "Dünya haritası" });
+        sv.appendChild(svgEl("rect", { x: 0, y: 0, width: H.w, height: H.h, fill: "var(--yuzey-2)" }));
+        sv.appendChild(svgEl("path", { d: H.arka, fill: "var(--cizgi)", stroke: "var(--yuzey)", "stroke-width": ".4" }));
+        var yollar = {};
+        H.adli.forEach(function (u) {
+          var p = svgEl("path", { d: u[3], class: "ulke", fill: "var(--cizgi)", stroke: "var(--yuzey)", "stroke-width": ".4", "stroke-linejoin": "round" });
+          if (tikla) p.addEventListener("click", function () { tikla(u, p); });
+          yollar[u[0]] = p; sv.appendChild(p);
+        });
+        if (hedef && mod === "ad") yollar[hedef[0]].setAttribute("fill", "var(--vurgu)");
+        return { sv: sv, yollar: yollar };
+      }
+
+      function ciz() {
+        kap.replaceChildren();
+        if (i >= N) { sonuc(); return; }
+        var u = sorular[i], bitti = false;
+        var geri = h("div", { class: "geri-yer" });
+        var devam = h("button", { class: "dugme", type: "button", hidden: "", onclick: function () { i++; ciz(); } }, i === N - 1 ? "Bitir" : "Devam");
+        var ust = h("div", { class: "mola-ust" },
+          h("button", { class: "kapat", type: "button", "aria-label": "Molaya dön", onclick: function () { molaMenu(kap); } }, "✕"),
+          h("span", { class: "kucuk" }, (i + 1) + " / " + N));
+        kap.appendChild(ust);
+
+        if (mod === "ad") {
+          var diger = karistir(havuz.filter(function (x) { return x !== u; })).slice(0, 4).map(function (x) { return x[0]; });
+          var sec = karistir([u[0]].concat(diger));
+          var hr = haritaKur(u, null);
+          kap.appendChild(h("div", { class: "kart mola-soru" }, h("p", { class: "soru-metin" }, "Renkli ülke hangisi?")));
+          kap.appendChild(h("div", { class: "harita-kutu" }, hr.sv));
+          var secenekKutu = h("div", { class: "secenekler" });
+          sec.forEach(function (m, p) {
+            secenekKutu.appendChild(h("button", { class: "secenek", type: "button", onclick: function () {
+              if (bitti) return; bitti = true; titret(m === u[0] ? 12 : 25);
+              Array.prototype.forEach.call(secenekKutu.children, function (bb, q) {
+                bb.disabled = true;
+                if (sec[q] === u[0]) bb.classList.add("dogru"); else if (q === p) bb.classList.add("tekrar");
+              });
+              if (m === u[0]) { dogru++; geri.textContent = "Güzel 🌿"; } else { kacan.push(u); geri.textContent = "Doğrusu: " + u[0]; }
+              devam.hidden = false;
+            } }, h("span", { class: "harf", "aria-hidden": "true" }, HARFLER[p]), h("span", { class: "metin" }, m)));
+          });
+          kap.appendChild(secenekKutu);
+        } else {
+          kap.appendChild(h("div", { class: "kart mola-soru" }, h("p", { class: "soru-metin" }, "Haritada " + u[0] + " nerede?")));
+          var hr2 = haritaKur(u, function (secilen, yol) {
+            if (bitti) return; bitti = true; titret(secilen === u ? 12 : 25);
+            if (secilen === u) { dogru++; yol.setAttribute("fill", "var(--iyi)"); geri.textContent = "Güzel 🌿"; }
+            else {
+              kacan.push(u); yol.setAttribute("fill", "var(--tekrar-acik)");
+              hr2.yollar[u[0]].setAttribute("fill", "var(--iyi)");
+              geri.textContent = "Burası " + secilen[0]; // dokunduğu ülke; doğrusu yeşil gösterilir
+              geri.textContent += ". " + u[0] + " yeşil işaretli yer.";
+            }
+            devam.hidden = false;
+          });
+          kap.appendChild(h("div", { class: "harita-kutu" }, hr2.sv));
+        }
+        kap.appendChild(geri);
+        kap.appendChild(devam);
+      }
+
+      function sonuc() {
+        kap.replaceChildren();
+        kap.appendChild(h("div", { class: "kart" },
+          h("h2", null, N + " sorudan " + dogru + "'i oturdu"),
+          h("p", { class: "alt" }, kacan.length ? "Şunlara bir daha göz atalım:" : "Hepsi yerli yerinde, harika 🌿")));
+        if (kacan.length) kap.appendChild(h("div", { class: "kart" }, kacan.map(function (x) { return h("p", { class: "kacan" }, h("b", null, x[0])); })));
+        kap.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { molaHarita(kap, mod, kita); } }, "Bir tur daha"));
+        kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Mola menüsü"));
+      }
+      ciz();
+    });
   }
 
   /* ---------- Gözden Geçir ---------- */
@@ -1332,7 +1449,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev31" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev32" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",

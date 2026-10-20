@@ -525,3 +525,7 @@ body.testte .sayfa { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 .mola-soru .soru-metin { font-size: 21px; font-weight: 650; }
 .geri-yer { min-height: 28px; text-align: center; font-weight: 600; margin: 2px 0 10px; }
 .kacan { margin: 6px 0; }
+
+.harita-kutu { margin-bottom: 12px; border-radius: 16px; overflow: hidden; background: var(--yuzey-2); }
+.ulke-harita { display: block; width: 100%; height: auto; max-height: 46vh; }
+.ulke { cursor: pointer; -webkit-tap-highlight-color: transparent; }
