@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev18"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev19"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -548,22 +548,40 @@
     return h("div", null, h("div", { class: "test-liste" }, satirlar), karisik);
   }
 
-  function tekrarBolumu(k, sorular) {
-    var idler = bekleyenIdler(k.id);
+  // Bir konudan bekleyen maddelere bağlı sorular (her soru bir kez).
+  function bekleyenSorular(konuId, sorular) {
     var secilen = [];
-    idler.forEach(function (id) {
+    bekleyenIdler(konuId).forEach(function (id) {
       var q = sorular.filter(function (x) { return ogeIdleri(x).indexOf(id) >= 0; })[0];
       if (q && secilen.indexOf(q) < 0) secilen.push(q);
     });
-    if (!secilen.length) {
+    return secilen;
+  }
+
+  // Bekleyeni 3'ten az olan konular aynı dersteki küçük konularla ortak bir kartta toplanır.
+  function tekrarBolumu(k, veri) {
+    var kendi = bekleyenSorular(k.id, veri.sorular.filter(function (x) { return x.konu === k.id; }));
+    function kart(baslik, secilen, ad) {
+      return h("div", { class: "kart" },
+        h("h2", null, baslik),
+        h("p", { class: "alt" }, "Birkaç soruyla hepsini tazeleyelim."),
+        h("button", { class: "dugme", type: "button", style: "margin-top:16px",
+          onclick: function () { modSec(function (mod) { testBaslat(ad + " · tekrar", secilen, mod); }); } }, "Tekrar et"));
+    }
+    if (!kendi.length) {
       return yakinda("🌤️", "Şimdilik tekrar bekleyen yok",
         "Bu konudan öğrendiklerin tekrar zamanı gelince burada görünecek.");
     }
-    return h("div", { class: "kart" },
-      h("h2", null, secilen.length + " madde seni bekliyor"),
-      h("p", { class: "alt" }, "Birkaç soruyla hepsini tazeleyelim."),
-      h("button", { class: "dugme", type: "button", style: "margin-top:16px",
-        onclick: function () { modSec(function (mod) { testBaslat(k.ad + " · tekrar", secilen, mod); }); } }, "Tekrar et"));
+    if (kendi.length >= 3) return kart(kendi.length + " madde seni bekliyor", kendi, k.ad);
+
+    var toplam = [], adlar = [];
+    KONULAR.filter(function (x) { return x.dosya === k.dosya; }).forEach(function (x) {
+      var l = bekleyenSorular(x.id, veri.sorular.filter(function (q) { return q.konu === x.id; }));
+      if (l.length && l.length < 3) { l.forEach(function (q) { toplam.push(q); }); adlar.push(x.ad); }
+    });
+    var kutu = kart(toplam.length + " madde seni bekliyor", toplam, "Karışık");
+    kutu.insertBefore(h("p", { class: "kucuk" }, "Az kalan konular burada bir arada: " + adlar.join(", ") + "."), kutu.children[1]);
+    return kutu;
   }
 
   /* ---------- test akışı ---------- */
@@ -891,7 +909,7 @@
           ekle(icerik, yakinda("🌿", "Bu konu hazırlanıyor", "İçerik kaynaklardan hazırlanınca burada olacak."));
         } else if (secili === "ozet") ekle(icerik, ozetBolumu(maddeler, sorular, veri.semalar || {}, k, arg));
         else if (secili === "calis") ekle(icerik, calisBolumu(sorular, k.ad, veri.testler.filter(function (t) { return t.konu === k.id; })));
-        else ekle(icerik, tekrarBolumu(k, sorular));
+        else ekle(icerik, tekrarBolumu(k, veri));
       });
 
       // Kart akışında konu başlığı ve sekmeler gizlenir: kart ve düğmeler ekrana sığsın.
@@ -973,7 +991,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev18" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev19" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",
