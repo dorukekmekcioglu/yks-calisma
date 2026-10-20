@@ -36,7 +36,7 @@ function karakterSvg(gece) {
   var govde =
     '<path d="M24 232C28 196 58 178 100 176C142 178 172 196 176 232Z" fill="' + K + '"/>' +
     '<path d="M78 180Q100 170 122 180L128 232H72Z" fill="' + B + '"/>' +
-    aksesuar;
+    '';
 
   var sallayanPati =
     '<g class="el" style="transform-origin:160px 190px">' +
@@ -56,7 +56,6 @@ function karakterSvg(gece) {
       '<path d="M62 44C52 60 56 70 62 76" stroke="#454553" stroke-width="3" stroke-linecap="round" fill="none"/>' +
       '<path d="M138 44C148 60 144 70 138 76" stroke="#454553" stroke-width="3" stroke-linecap="round" fill="none"/>' +
       // boyun ve göğüs: baş ile gövde arasını kapatır
-      '<ellipse cx="100" cy="168" rx="46" ry="28" fill="' + K + '"/>' +
       '<path d="M82 156Q100 180 118 156L124 190H76Z" fill="' + B + '"/>' +
       // baş: siyah, ortada beyaz şerit ve beyaz ağız
       '<ellipse cx="100" cy="112" rx="50" ry="46" fill="' + K + '"/>' +
