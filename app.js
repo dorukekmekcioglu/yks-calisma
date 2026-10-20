@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev35"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev36"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -1662,7 +1662,7 @@
     var yol = (location.hash.replace(/^#\/?/, "") || "ana").split("/");
     var ad = sayfalar[yol[0]] ? yol[0] : "ana";
     if (ad === "mola") ad = "kesif";
-    document.body.dataset.bolum = ad === "kesif" ? "kesif" : "";
+    document.body.dataset.bolum = ad === "kesif" ? "kesif" : ad === "gozden-gecir" ? "gozden" : "";
     document.querySelectorAll(".sekmeler a").forEach(function (a) {
       if (a.dataset.sekme === (ad === "konu" ? "ana" : ad)) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
@@ -1681,7 +1681,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev35" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev36" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",
