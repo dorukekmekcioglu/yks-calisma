@@ -14,9 +14,9 @@ var DERSLER = [
   { id: "biyoloji", ad: "Biyoloji",   sinav: "ayt", ikon: "🌱" }
 ];
 
-function _k(sinav, ders, kod, ad) {
+function _k(sinav, ders, kod, ad, hazir) {
   return { id: ders.slice(0, 3) + "-" + sinav + "-" + kod, sinav: sinav, ders: ders,
-           ad: ad, dosya: ders + "-" + sinav, oncelik: true, hazir: false };
+           ad: ad, dosya: ders + "-" + sinav, oncelik: true, hazir: !!hazir };
 }
 
 var KONULAR = [
@@ -51,6 +51,6 @@ var KONULAR = [
   _k("tyt", "sosyal", "ekonomi", "Ekonomik Faaliyetler"),
   _k("tyt", "sosyal", "afet", "Doğal Afetler"),
 
-  _k("ayt", "biyoloji", "sinir", "Sinir Sistemi"),
+  _k("ayt", "biyoloji", "sinir", "Sinir Sistemi", true),
   _k("ayt", "biyoloji", "endokrin", "Endokrin Sistem")
 ];

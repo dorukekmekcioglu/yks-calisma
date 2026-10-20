@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev1"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev3"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -212,7 +212,7 @@
   function dersYukle(dosya) {
     if (!yuklenenler[dosya]) {
       yuklenenler[dosya] = new Promise(function (coz) {
-        var bos = { maddeler: [], sorular: [] };
+        var bos = { maddeler: [], sorular: [], testler: [], semalar: {} };
         if (window.ICERIK && window.ICERIK[dosya]) { toplamlariGuncelle(window.ICERIK[dosya]); return coz(window.ICERIK[dosya]); }
         var el = document.createElement("script");
         el.src = "data/" + dosya + ".js";
@@ -228,28 +228,261 @@
   }
   window.icerikKaydet = function (dosya, veri) {
     window.ICERIK = window.ICERIK || {};
-    window.ICERIK[dosya] = { maddeler: veri.maddeler || [], sorular: veri.sorular || [] };
+    window.ICERIK[dosya] = { maddeler: veri.maddeler || [], sorular: veri.sorular || [], testler: veri.testler || [], semalar: veri.semalar || {} };
   };
 
-  function ozetBolumu(maddeler) {
-    var gruplar = [], harita = {};
+  /* ---------- Özet: bölümler ve kart akışı ---------- */
+  var ozetDurum = kayit.oku("yks-ozet", {}); // { konuId: { maddeId: "b" (biliyorum) | "t" (tekrar bak) } }
+  function ozetKaydet() { kayit.yaz("yks-ozet", ozetDurum); }
+
+  function bolumlereAyir(maddeler) {
+    var liste = [], harita = {};
     maddeler.forEach(function (m) {
-      if (!harita[m.baslik]) { harita[m.baslik] = []; gruplar.push(m.baslik); }
-      harita[m.baslik].push(m);
+      if (!harita[m.baslik]) { harita[m.baslik] = { ad: m.baslik, maddeler: [] }; liste.push(harita[m.baslik]); }
+      harita[m.baslik].maddeler.push(m);
     });
-    return gruplar.map(function (b) {
-      return h("section", { class: "kart ozet" },
-        h("h2", null, b),
-        h("ul", null, harita[b].map(function (m) { return h("li", null, m.bilgi); })));
-    });
+    return liste;
   }
 
-  function calisBolumu(sorular, konuAd) {
-    return h("div", { class: "kart" },
-      h("h2", null, "Bu konudan yeni test"),
-      h("p", { class: "alt" }, sorular.length + " soru hazır."),
-      h("button", { class: "dugme", type: "button", style: "margin-top:16px",
-        onclick: function () { modSec(function (mod) { testBaslat(konuAd, sorular, mod); }); } }, "Teste başla"));
+  // "Tekrar bak" denen madde yarın tekrar listesine düşer (yalnızca soruyla bağlı maddeler).
+  function maddeTekrar(id, konu) {
+    var g = bugunNo(), r = ilerleme[id] || { k: 1, d: 0, y: 0 };
+    r.t = true; r.k = 1; r.s = g + 1; r.kalici = false; r.n = konu;
+    ilerleme[id] = r;
+    kayit.yaz("yks-ilerleme", ilerleme);
+  }
+
+  function ozetBolumu(maddeler, sorular, semalar, k, arg) {
+    var bolumler = bolumlereAyir(maddeler);
+    var durum = ozetDurum[k.id] = ozetDurum[k.id] || {};
+    if (arg[2] === "liste") return ozetListe(bolumler, k);
+    var no = arg[2] != null ? parseInt(arg[2], 10) : -1;
+    if (no >= 0 && bolumler[no]) return kartAkisi(bolumler, no, sorular, semalar, k, durum);
+
+    var satirlar = bolumler.map(function (b, i) {
+      var bil = b.maddeler.filter(function (m) { return durum[m.id] === "b"; }).length;
+      var tek = b.maddeler.filter(function (m) { return durum[m.id] === "t"; }).length;
+      var ek = bil + tek ? " · " + bil + " oturdu" + (tek ? ", " + tek + " tekrar" : "") : "";
+      return h("a", { class: "test-satir ozet-satir", href: "#/konu/" + k.id + "/ozet/" + i },
+        h("span", { class: "no kartno", "aria-hidden": "true" }, "▤"),
+        h("span", { class: "bilgi" }, h("b", null, b.ad), h("small", null, b.maddeler.length + " kart" + ek)),
+        bil + tek === b.maddeler.length ? h("span", { class: "tik", "aria-hidden": "true" }, "✓") : null);
+    });
+    return h("div", null,
+      h("p", { class: "kucuk", style: "margin:0 4px 12px" }, "Bir bölüm seç, kartları tek tek gez. Bildiğine “Yess!”, oturmayana “Tam oturmadı sanki?” de."),
+      h("div", { class: "test-liste" }, satirlar),
+      h("a", { class: "link-dugme", href: "#/konu/" + k.id + "/ozet/liste" }, "Tek sayfa olarak oku"));
+  }
+
+  function ozetListe(bolumler, k) {
+    return h("div", null,
+      h("a", { class: "geri", href: "#/konu/" + k.id + "/ozet" }, "‹ Bölümler"),
+      bolumler.map(function (b) {
+        return h("section", { class: "kart ozet" }, h("h2", null, b.ad),
+          h("ul", null, b.maddeler.map(function (m) { return h("li", null, m.bilgi); })));
+      }));
+  }
+
+  // Bilgisayarda: ← tam oturmadı, → yess! (kart ekranındayken)
+  document.addEventListener("keydown", function (e) {
+    if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    var kart = document.querySelector(".bilgi-kart.kaydir");
+    var dugmeler = document.querySelectorAll(".kart-dugmeler .dugme");
+    if (!kart || dugmeler.length < 2) return;
+    dugmeler[e.key === "ArrowRight" ? 1 : 0].click();
+  });
+
+  // Kartı sağa (biliyorum) ya da sola (tekrar bak) kaydırma. Parmakla, fareyle ve kalemle çalışır.
+  function kaydirmaBagla(el, bitti) {
+    var x0 = null, y0 = 0, dx = 0, yatay = false, bitirildi = false;
+    function eslik() { return Math.min(110, Math.max(70, el.offsetWidth * 0.28)); }
+    el.addEventListener("dragstart", function (e) { e.preventDefault(); });
+    el.addEventListener("pointerdown", function (e) {
+      if (e.button != null && e.button > 0) return;
+      if (e.pointerType === "mouse") e.preventDefault(); // fareyle sürüklerken metin seçilmesin
+      x0 = e.clientX; y0 = e.clientY; dx = 0; yatay = false;
+      try { el.setPointerCapture(e.pointerId); } catch (x) {}
+    });
+    el.addEventListener("pointermove", function (e) {
+      if (x0 == null || bitirildi) return;
+      var ddx = e.clientX - x0, ddy = e.clientY - y0;
+      if (!yatay) {
+        if (Math.abs(ddx) < 8 && Math.abs(ddy) < 8) return;
+        if (Math.abs(ddy) > Math.abs(ddx)) { x0 = null; return; } // dikey kaydırma: sayfa kayar
+        yatay = true; el.classList.add("suruklenir");
+      }
+      dx = ddx;
+      el.style.transform = "translateX(" + dx + "px) rotate(" + (dx / 28) + "deg)";
+      var oran = Math.min(1, Math.abs(dx) / eslik());
+      el.style.setProperty("--sag", dx > 0 ? oran : 0);
+      el.style.setProperty("--sol", dx < 0 ? oran : 0);
+    });
+    function birak() {
+      if (x0 == null) return;
+      var gec = yatay && Math.abs(dx) >= eslik();
+      x0 = null;
+      if (!yatay) return;
+      el.classList.remove("suruklenir");
+      if (gec) {
+        bitirildi = true;
+        var yon = dx > 0 ? "sag" : "sol";
+        el.style.transform = "translateX(" + (dx > 0 ? 130 : -130) + "%) rotate(" + (dx > 0 ? 12 : -12) + "deg)";
+        el.style.opacity = "0";
+        setTimeout(function () { bitti(yon); }, 160);
+      } else {
+        el.style.transform = ""; el.style.setProperty("--sag", 0); el.style.setProperty("--sol", 0);
+      }
+    }
+    el.addEventListener("pointerup", birak);
+    el.addEventListener("pointercancel", birak);
+  }
+
+  function kartAkisi(bolumler, no, sorular, semalar, k, durum) {
+    var b = bolumler[no];
+    var idler = {}, bagli = {};
+    b.maddeler.forEach(function (m) { idler[m.id] = 1; });
+    sorular.forEach(function (q) { ogeIdleri(q).forEach(function (id) { bagli[id] = 1; }); });
+
+    function maddeKartlari(liste) {
+      var out = [];
+      liste.forEach(function (m) {
+        out.push({ tur: "madde", m: m });
+        if (m.sema && semalar[m.sema]) out.push({ tur: "sema", ad: m.sema });
+      });
+      return out;
+    }
+    var kartlar = maddeKartlari(b.maddeler);
+    // bölüm sonunda mini sorular (kısa bölümde 1, uzunda 2)
+    var adaylar = karistir(sorular.filter(function (q) { return ogeIdleri(q).some(function (id) { return idler[id]; }); }));
+    adaylar.slice(0, b.maddeler.length > 5 ? 2 : 1).forEach(function (q) { kartlar.push({ tur: "soru", q: q, s: soruHazirla(q), secim: null }); });
+
+    var i = 0;
+    for (var j = 0; j < kartlar.length; j++) {
+      if (kartlar[j].tur === "madde" && !durum[kartlar[j].m.id]) { i = j; break; }
+    }
+    var kap = h("div", { class: "kart-kap" });
+
+    function ilerle() { i++; ciz(); }
+    var kilit = false;
+    function isaretle(m, deger) {
+      if (kilit) return; kilit = true; // kart uçarken ikinci işaret sayılmasın
+      durum[m.id] = deger; ozetKaydet();
+      if (deger === "t" && bagli[m.id]) maddeTekrar(m.id, k.id);
+      ilerle();
+    }
+
+    function ciz() {
+      kilit = false;
+      kap.replaceChildren();
+      window.scrollTo(0, 0);
+      var ust = h("div", { class: "kart-ust" },
+        h("a", { class: "geri", href: "#/konu/" + k.id + "/ozet" }, "‹ Bölümler"),
+        h("span", { class: "kucuk" }, b.ad + (i < kartlar.length ? " · " + (i + 1) + "/" + kartlar.length : "")));
+      kap.appendChild(ust);
+      kap.appendChild(h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + Math.min(100, i / kartlar.length * 100) + "%" })));
+
+      if (i >= kartlar.length) { bitis(); return; }
+      var kart = kartlar[i];
+
+      if (kart.tur === "madde") {
+        var m = kart.m;
+        var kartEl = h("div", { class: "bilgi-kart kaydir" },
+          h("span", { class: "damga sol", "aria-hidden": "true" }, "Tam oturmadı"),
+          h("span", { class: "damga sag", "aria-hidden": "true" }, "Yess!"),
+          h("p", { class: "bilgi" }, m.bilgi),
+          m.ipucu ? h("div", { class: "not ipucu" }, h("b", null, "💡 İpucu"), h("span", null, m.ipucu)) : null,
+          m.karisma ? h("div", { class: "not karisma" }, h("b", null, "🔎 Sık karıştırılır"), h("span", null, m.karisma)) : null);
+        kaydirmaBagla(kartEl, function (yon) { isaretle(m, yon === "sag" ? "b" : "t"); });
+        kap.appendChild(kartEl);
+        kap.appendChild(h("p", { class: "kucuk kaydir-not" }, "← Tam oturmadı  ·  Yess! →"));
+        kap.appendChild(h("div", { class: "kart-dugmeler" },
+          h("button", { class: "dugme ikincil", type: "button", onclick: function () { isaretle(m, "t"); } }, "Tam oturmadı sanki?"),
+          h("button", { class: "dugme", type: "button", onclick: function () { isaretle(m, "b"); } }, "Yess!")));
+        if (i > 0) kap.appendChild(h("button", { class: "link-dugme", type: "button", onclick: function () { i--; ciz(); } }, "‹ Önceki kart"));
+      } else if (kart.tur === "sema") {
+        var sm = semalar[kart.ad];
+        var kutu = h("div", { class: "sema" });
+        kutu.innerHTML = sm.svg; // yalnızca kendi yazdığımız SVG
+        kap.appendChild(h("div", { class: "bilgi-kart" }, h("p", { class: "kucuk" }, "Şema · " + sm.baslik), kutu));
+        kap.appendChild(h("div", { class: "kart-dugmeler" }, h("button", { class: "dugme", type: "button", onclick: ilerle }, "Devam")));
+        if (i > 0) kap.appendChild(h("button", { class: "link-dugme", type: "button", onclick: function () { i--; ciz(); } }, "‹ Önceki kart"));
+      } else {
+        var s = kart.s, q = kart.q, cevaplandi = kart.secim != null;
+        kap.appendChild(h("div", { class: "soru-alani" },
+          h("p", { class: "kucuk" }, "Mini soru · az önce okuduklarından"),
+          h("p", { class: "soru-metin" }, q.soru),
+          q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, o); })) : null));
+        var alt = h("div", { class: "alt-alan" });
+        if (cevaplandi) {
+          var dogruMu = kart.secim === s.dogruYeri;
+          alt.appendChild(h("div", { class: "geri-bildirim " + (dogruMu ? "iyi" : "tekrar") },
+            h("b", null, dogruMu ? "Güzel, bu pekişti 🌿" : "Bunu tekrar listene ekledik, birlikte pekiştireceğiz."),
+            q.dipnot ? h("p", null, q.dipnot) : null));
+        }
+        alt.appendChild(h("div", { class: "secenekler" }, s.sira.map(function (orj, poz) {
+          var sinif = "secenek";
+          if (cevaplandi) { if (poz === s.dogruYeri) sinif += " dogru"; else if (poz === kart.secim) sinif += " tekrar"; }
+          return h("button", { class: sinif, type: "button", disabled: cevaplandi ? "" : false,
+            onclick: function () {
+              if (cevaplandi) return;
+              kart.secim = poz; titret(poz === s.dogruYeri ? 12 : 25);
+              cevapIsle(q, poz === s.dogruYeri); ciz();
+            } },
+            h("span", { class: "harf" }, HARFLER[poz]), h("span", { class: "metin" }, q.secenekler[orj]));
+        })));
+        if (cevaplandi) alt.appendChild(h("button", { class: "dugme", type: "button", onclick: ilerle }, "Devam"));
+        kap.appendChild(alt);
+        if (i > 0) kap.appendChild(h("button", { class: "link-dugme", type: "button", onclick: function () { i--; ciz(); } }, "‹ Önceki kart"));
+      }
+    }
+
+    function bitis() {
+      var bil = b.maddeler.filter(function (m) { return durum[m.id] === "b"; }).length;
+      var tek = b.maddeler.filter(function (m) { return durum[m.id] === "t"; });
+      var dugmeler = h("div", { class: "sonuc-dugmeler" });
+      if (tek.length) {
+        dugmeler.appendChild(h("button", { class: "dugme", type: "button", onclick: function () {
+          kartlar = maddeKartlari(tek); i = 0; ciz();
+        } }, "Oturmayanları tekrar gör (" + tek.length + ")"));
+      }
+      if (no + 1 < bolumler.length) dugmeler.appendChild(h("a", { class: "dugme" + (tek.length ? " ikincil" : ""), href: "#/konu/" + k.id + "/ozet/" + (no + 1) }, "Sonraki bölüm ›"));
+      dugmeler.appendChild(h("a", { class: "dugme ikincil", href: "#/konu/" + k.id + "/calis" }, "Teste geç"));
+      dugmeler.appendChild(h("a", { class: "dugme ikincil", href: "#/konu/" + k.id + "/ozet" }, "Bölümlere dön"));
+      kap.appendChild(h("div", { class: "kart sonuc", style: "margin-top:16px" },
+        h("h2", null, "Bölüm tamam 🌿"),
+        h("p", { class: "alt" }, bil + " kart oturdu" + (tek.length ? ", " + tek.length + " kart tekrar listende." : "."))));
+      kap.appendChild(dugmeler);
+    }
+
+    ciz();
+    return kap;
+  }
+
+  function calisBolumu(sorular, konuAd, testler) {
+    function baslat(baslik, liste, testId) {
+      modSec(function (mod) { testBaslat(baslik, liste, mod, false, testId); });
+    }
+    var karisik = h("button", { class: "dugme ikincil", type: "button", style: "margin-top:12px",
+      onclick: function () { baslat(konuAd + " · karışık", karistir(sorular)); } }, "Hepsini karışık çöz · " + sorular.length + " soru");
+    if (!testler.length) {
+      return h("div", { class: "kart" },
+        h("h2", null, "Bu konudan yeni test"),
+        h("p", { class: "alt" }, sorular.length + " soru hazır."),
+        h("button", { class: "dugme", type: "button", style: "margin-top:16px", onclick: function () { baslat(konuAd, sorular); } }, "Teste başla"));
+    }
+    var sonuclar = kayit.oku("yks-testler", {});
+    var satirlar = testler.map(function (t, i) {
+      var liste = t.sorular.map(function (id) { return sorular.filter(function (q) { return q.id === id; })[0]; }).filter(Boolean);
+      var son = sonuclar[t.id];
+      return h("button", { class: "test-satir", type: "button", onclick: function () { baslat(konuAd + " · " + t.ad, liste, t.id); } },
+        h("span", { class: "no", "aria-hidden": "true" }, String(i + 1)),
+        h("span", { class: "bilgi" },
+          h("b", null, t.ad),
+          h("small", null, liste.length + " soru" + (son ? " · son tur " + son.d + "/" + son.n : ""))),
+        son ? h("span", { class: "tik", "aria-hidden": "true" }, "✓") : null);
+    });
+    return h("div", null, h("div", { class: "test-liste" }, satirlar), karisik);
   }
 
   function tekrarBolumu(k, sorular) {
@@ -311,9 +544,9 @@
     if (location.hash === "#/test") rota(); else location.hash = "#/test";
   }
 
-  function testBaslat(baslik, sorular, mod, kisa) {
+  function testBaslat(baslik, sorular, mod, kisa, testId) {
     if (!sorular.length) { mesaj("Burada henüz soru yok, yakında 🌿"); return; }
-    T = { baslik: baslik, mod: mod, liste: sorular.map(soruHazirla), i: 0, secim: [], kayitli: [], kisa: !!kisa };
+    T = { baslik: baslik, mod: mod, liste: sorular.map(soruHazirla), i: 0, secim: [], kayitli: [], kisa: !!kisa, testId: testId || null };
     if (kisa) yarimKaydet();
     testGit();
   }
@@ -448,6 +681,12 @@
       if (T.secim[i] === s.dogruYeri) dogru++; else yanlislar.push(s);
     });
     var oran = n ? dogru / n * 100 : 0;
+    if (T.testId && !T.sonucKaydedildi) {
+      T.sonucKaydedildi = true;
+      var tum = kayit.oku("yks-testler", {});
+      tum[T.testId] = { d: dogru, n: n, g: bugunAnahtar() };
+      kayit.yaz("yks-testler", tum);
+    }
     var mod = T.mod;
     var not = askNotu(oran);
 
@@ -530,12 +769,14 @@
       var geri = h("a", { class: "geri", href: "#/" }, "‹ Dersler");
       if (!k) return [geri, h("header", { class: "ust" }, h("h1", null, "Konu bulunamadı"))];
 
-      var sekmeler = [["ozet", "Özet"], ["calis", "Çalış"], ["tekrar", "Tekrar"]];
+      var sekmeler = [["ozet", "Özet", "kart"], ["calis", "Test", "test"], ["tekrar", "Tekrar", "tekrar"]];
+      var aciklama = { ozet: "Kart kart gez, bildiklerini ayır.", calis: "Sorularla bilgini sına.", tekrar: "Sırası gelen maddeleri tazele." };
       var secili = arg[1] === "calis" || arg[1] === "tekrar" ? arg[1] : "ozet";
       var icerik = h("div", { class: "konu-icerik" }, h("p", { class: "kucuk" }, "Yükleniyor…"));
       var cubuk = h("div", { class: "sekme-cubuk", role: "tablist" }, sekmeler.map(function (s) {
-        return h("a", { href: "#/konu/" + k.id + "/" + s[0], role: "tab", "aria-selected": String(secili === s[0]) }, s[1]);
+        return h("a", { href: "#/konu/" + k.id + "/" + s[0], role: "tab", "data-tur": s[2], "aria-selected": String(secili === s[0]) }, s[1]);
       }));
+      var tanim = h("p", { class: "sekme-tanim", "data-tur": secili === "calis" ? "test" : secili === "ozet" ? "kart" : "tekrar" }, aciklama[secili]);
 
       dersYukle(k.dosya).then(function (veri) {
         var maddeler = veri.maddeler.filter(function (m) { return m.konu === k.id; });
@@ -543,11 +784,13 @@
         icerik.replaceChildren();
         if (!maddeler.length && !sorular.length) {
           ekle(icerik, yakinda("🌿", "Bu konu hazırlanıyor", "İçerik kaynaklardan hazırlanınca burada olacak."));
-        } else if (secili === "ozet") ekle(icerik, ozetBolumu(maddeler));
-        else if (secili === "calis") ekle(icerik, calisBolumu(sorular, k.ad));
+        } else if (secili === "ozet") ekle(icerik, ozetBolumu(maddeler, sorular, veri.semalar || {}, k, arg));
+        else if (secili === "calis") ekle(icerik, calisBolumu(sorular, k.ad, veri.testler.filter(function (t) { return t.konu === k.id; })));
         else ekle(icerik, tekrarBolumu(k, sorular));
       });
 
+      // Kart akışında konu başlığı ve sekmeler gizlenir: kart ve düğmeler ekrana sığsın.
+      if (secili === "ozet" && /^\d+$/.test(arg[2] || "")) return [icerik];
       return [
         geri,
         h("header", { class: "ust" },
@@ -555,6 +798,7 @@
           h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + konuYuzde(k.id) + "%" })),
           rozetVarMi(k.id) ? h("p", { class: "kucuk", style: "margin-top:8px" }, "🏅 Bu konuda ustalaştın") : null),
         cubuk,
+        tanim,
         icerik
       ];
     },
@@ -624,7 +868,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev1" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev3" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",

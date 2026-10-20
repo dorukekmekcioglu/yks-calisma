@@ -49,6 +49,7 @@ Konu başına soru sayısı sabit değildir. Kullandıkça büyütülür.
 
 ### Kaynak ve doğruluk
 - İçerik **gönderilen PDF ve slaytlardan** üretilir. Kaynakta olmayan ya da emin olunmayan bilgi eklenmez.
+- **Ek kaynaklar (karar: 1.0 ara onayı):** `kaynaklar/` içindeki dosyalara ek olarak **MEBİ** ve **OGM Materyal** sayfalarındaki konu özetleri ve örnek sorular da **okunarak** kaynak olarak kullanılabilir. Kurallar: sayfalar uygulamanın içindeki tarayıcıda açılır, giriş gerekiyorsa (MEBİ) **proje sahibi kendisi giriş yapar**, Claude şifre girmez. Sayfalardan toplu indirme yapılmaz; konu konu okunur. Metin, soru ve görsel **olduğu gibi kopyalanmaz**: bilgi özgün cümlelerle yeniden yazılır, sorular özgün kurulur (depo herkese açık). Her konu paketine, hangi kaynaktan beslendiği `kaynaklar/` içinde tutulan **özel bir notla** kaydedilir (commit edilmez).
 - Kaynaklardaki metin ve görseller kopyalanmaz. Bilgi özgün cümlelerle yazılır, görseller SVG olarak yeniden çizilir.
 - Mevcut 40 soru **kullanılmaz**. İçerik sıfırdan üretilir.
 - PDF ve slaytlar proje içindeki `kaynaklar/` klasörüne konur. Bu klasör `.gitignore`'dadır: depo herkese açık olduğu için kaynaklar **asla commit edilmez**, yalnızca onlardan üretilen içerik dosyaları commit edilir.
@@ -73,7 +74,14 @@ Her konunun **Özet** sekmesi olur: bilgi maddeleri kısa ve kompakt notlar hali
 
 ## 3. Site yapısı
 
-Alt sekme çubuğu, **4 sekme**:
+> **Karar (1.0 ara onayı, sonraki kararlar bunun önüne geçer):**
+> - Alt çubukta **3 sekme**: Ana sayfa · Gözden Geçir · Mola (soldan sağa; Mola en sağda).
+> - **Profil** alt çubuktan çıktı: ekranın **sağ üst köşesinde yuvarlak bir simge**, profil ve ayarlara buradan girilir. Sol üstte "YKS Köşesi" markası durur.
+> - Konu sayfası sekmeleri **Özet · Test · Tekrar** (eski adı "Çalış"). Özet yeşil/kart temalı, Test toprak rengi/soru temalı, Tekrar bal rengi; her sekmenin altında kısa bir tanım satırı görünür.
+> - Özet **kart akışıdır**: bölüm seç, kartları gez. **Sağa kaydır / "Yess!"** = oturdu, **sola kaydır / "Tam oturmadı sanki?"** = tekrar listesine. Bilgisayarda ← → tuşları da çalışır.
+> - Ana sayfa yeniden düzenlenecek: üstte selamlama + not, altında ilerleme, altında Kısa tur butonu; selamlayan bir karakter (gündüz/gece) planlanıyor.
+
+Alt sekme çubuğu (eski plan, **4 sekme** idi; yukarıdaki karar geçerli):
 
 ### 3.1 Ana sayfa
 - **Bugün kartı:** tekrarı gelen madde sayısı ve **"Kısa bir tur"** (2-3 dakikalık, 5-10 maddelik mini tekrar). Yarıda bırakılırsa kaldığı yerden devam eder, bırakmak hiçbir şeyi bozmaz.

@@ -9,7 +9,7 @@ Site yeniden yapılıyor. **Bütün kararlar, sürüm akışı, aşamalı çalı
 
 ## Kurallar
 - Dil Türkçe. Sorular ÖSYM üslubunda, 5 şıklı, tek doğru cevaplı.
-- İçerik yalnızca `kaynaklar/` klasöründeki PDF ve slaytlardan üretilir. Emin olunmayan bilgi eklenmez. Kaynak metin ve görseller kopyalanmaz. Depo herkese açık olduğu için `kaynaklar/` asla commit edilmez.
+- İçerik `kaynaklar/` klasöründeki PDF ve slaytlardan, ayrıca MEBİ ve OGM Materyal sayfalarından (okunarak, PLAN.md §2) üretilir. Emin olunmayan bilgi eklenmez. Kaynak metin ve görseller kopyalanmaz. Depo herkese açık olduğu için `kaynaklar/` asla commit edilmez.
 - Dipnotlar kısa, öğretici ve bilgiyi pekiştiren türden olur.
 - Ton baskısız olur: geri sayım öne çıkmaz, kırmızı uyarı yok, "yanlış" yerine yumuşak bir dil kullanılır.
 - Tasarım sade ve sıcak olur, telefonda tek elle kullanılır (şıklar alt yarıda, büyük dokunma alanları).
