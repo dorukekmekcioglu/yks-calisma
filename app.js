@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev5"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev6"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -907,7 +907,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev5" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev6" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",

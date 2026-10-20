@@ -52,5 +52,5 @@ var KONULAR = [
   _k("tyt", "sosyal", "afet", "Doğal Afetler"),
 
   _k("ayt", "biyoloji", "sinir", "Sinir Sistemi", true),
-  _k("ayt", "biyoloji", "endokrin", "Endokrin Sistem")
+  _k("ayt", "biyoloji", "endokrin", "Endokrin Sistem", true)
 ];
