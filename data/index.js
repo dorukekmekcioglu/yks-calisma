@@ -87,6 +87,15 @@ var KONULAR = [
   _k("tyt", "turkce", "tamlama", "İsim ve Sıfat Tamlamaları", true),
   _k("tyt", "turkce", "zarf", "Zarf (Belirteç)", true),
   _k("tyt", "turkce", "edat-baglac-unlem", "Edat, Bağlaç, Ünlem", true),
+  _k("tyt", "turkce", "fiil-kip", "Fiil ve Fiilde Kip", true),
+  _k("tyt", "turkce", "ek-fiil", "Ek-Fiil (Ek Eylem)", true),
+  _k("tyt", "turkce", "fiil-yapi", "Fiilde Yapı", true),
+  _k("tyt", "turkce", "fiilimsi", "Fiilimsiler (Eylemsiler)", true),
+  _k("tyt", "turkce", "cati", "Fiilde Çatı", true),
+  _k("tyt", "turkce", "cumle-ogeleri", "Cümlenin Ögeleri", true),
+  _k("tyt", "turkce", "cumle-turleri", "Cümle Türleri", true),
+  _k("tyt", "turkce", "anlatim-1", "Anlatım Bozuklukları 1: Anlama Dayalı", true),
+  _k("tyt", "turkce", "anlatim-2", "Anlatım Bozuklukları 2: Yapıya Dayalı", true),
 
   _k("ayt", "biyoloji", "sinir", "Sinir Sistemi", true),
   _k("ayt", "biyoloji", "endokrin", "Endokrin Sistem", true)
