@@ -52,7 +52,8 @@ var KONULAR = [
   _k("tyt", "biyoloji", "hayvan", "Hayvanlar Âlemi", true),
   _k("tyt", "biyoloji", "virus", "Virüsler", true),
 
-  _k("tyt", "sosyal", "harita", "Harita Bilgisi"),
+  _k("tyt", "sosyal", "koordinat", "Koordinat Sistemi ve Yerel Saat", true),
+  _k("tyt", "sosyal", "harita", "Harita Bilgisi", true),
   _k("tyt", "sosyal", "dunya", "Dünya'nın Şekli ve Hareketleri"),
   _k("tyt", "sosyal", "konum", "Coğrafi Konum"),
   _k("tyt", "sosyal", "iklim", "Atmosfer ve İklim"),
