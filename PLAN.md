@@ -2,7 +2,7 @@
 
 Bu belge, sitenin yeniden yapımı için konuşularak alınan kararların tamamıdır. Siteyi geliştiren her oturum (Sonnet dahil) işe başlamadan önce bu belgeyi okur ve buradaki kurallara uyar. Bir karar değişirse önce bu belge güncellenir.
 
-**Durum:** Plan onaylandı, 1.0 geliştirmesi başlıyor. Şu anki site (40 soruluk eski sürüm) 1.0 onaylanana kadar yayında kalır.
+**Durum (20 Ekim 2026):** **v1.0 yayında** (etiket `v1.0`, yayındaki 1.0-dev36). Sıradaki kilometre taşı **1.1 Kalite ve çeşitlilik** (§10). Ayrıntılı durum: `SUREC-RAPORU.md`.
 
 ---
 
@@ -253,22 +253,20 @@ Geliştirme küçük aşamalarla ilerler. **Onaylanmamış hiçbir şey yayına 
 3. Onaydan sonra commit atılır, `main`'e alınır, sürüm etiketlenir ve push edilir. Push'u gerekirse proje sahibi kendi terminalinden yapar.
 4. Her yayında `sw.js` içindeki önbellek adı ve sürüm numarası güncellenir, "Yenilikler" notu yazılır.
 
-## 10. Aşama sırası
+## 10. Kilometre taşları
 
-İçerik üretimi aşamalarla **paralel** ilerler: PDF'ler geldikçe öncelikli konuların bilgi havuzu hazırlanır ve site her aşamada gerçek içerikle test edilir.
+1.0 sırasında plan ara onaylarla değişti (yukarıdaki "Karar" notları). Tamamlanan 1.0'dan sonraki sıra aşağıdadır. Her kilometre taşı, kendi içinde §9'daki aşamalı onay akışıyla ilerler.
 
-| Sürüm | İçerik | Not |
-|---|---|---|
-| **1.0** | İskelet (4 sekme, gezinme), sade ve sıcak tema, açık/koyu mod · Ana sayfa (Bugün kartı, Kısa bir tur, karışık test, TYT/AYT → ders → konu) · Konu sayfası (Özet / Çalış / Tekrar) · Klasik ve öncüllü sorular · Test akışı (iki mod) ve sonuç ekranı · Temel Leitner ve yerel ilerleme · Dosyadan motivasyon ve aşk notları · Service worker ve güncelleme bildirimi · **Logo ve uygulama ikonları** (tema onaylandıktan sonra 2-3 SVG seçenek, seçilenden ikon boyutları) · **En az bir öncelikli konunun geniş içeriği** | Eski site yerine geçeceği için kullanılabilir olmalı. Yayından önce yalnızca yerelde, kendi içinde ara onaylarla test edilir. |
-| 1.1 | Diğer soru tipleri: Doğru/Yanlış, bilgi kartı, eşleştirme, boşluk doldurma · Tiplerin testte karışık gelmesi | |
-| 1.2 | Gözden Geçir: Tekrar edeceklerim, favoriler, sade istatistik, çalışma geçmişi | |
-| 1.3 | Profil, ayarlar, rozetler, deneme netleri, kalan gün (varsayılan kapalı) | |
-| 1.4 | SVG görsel altyapısı · Harita bilgisi içeriği | |
-| 1.5 | Mola sekmesi: başkentler, dünya haritası, Türkiye illeri, rahat ve süreli mod | Harita altyapısını 1.4 ile paylaşır |
-| 1.6 | Supabase: e-posta ile giriş, senkron, notların tablodan gelmesi, hatalı bildir | Proje sahibinin Supabase hesabı açması gerekir |
-| 1.7 | Hız ve çevrimdışı çalışma için son kontrol, temizlik | |
+| Sürüm | Ad | Kapsam | Bitti sayılması için |
+|---|---|---|---|
+| **v1.0** ✅ | İlk sürüm | 3 sekme (Ana sayfa, Gözden Geçir, Keşif) ve profil simgesi · konu sayfası (Özet kart akışı, Test, Tekrar) · klasik, öncüllü ve görselli sorular · Leitner ve yerel ilerleme · yedek al/geri yükle · Keşif harita oyunları · service worker · içerik: TYT Biyoloji, AYT Sinir ve Endokrin, Coğrafya 8 konu, TYT Türkçe dil bilgisi (874 madde, 1305 soru) | Etiketlendi: `v1.0` |
+| **1.1** | Kalite ve çeşitlilik | **Yeni konu eklenmez.** (1) `SORU-REHBERI.md` ve `araclar/denetim.py` devreye girer. (2) Mevcut bilgi maddeleri ve sorular rehbere göre taranır, **önce TYT Türkçe**, sonra Biyoloji ve Coğrafya. (3) Kısa soru tipleri: **Doğru/Yanlış, bilgi kartı, boşluk doldurma, eşleştirme**, bilgi maddelerinden türetilir, testlerde ve kısa turda tiplerle karışık gelir. (4) Gerçek motivasyon ve aşk notları girilir. (5) Profil'de nazik bir yedek hatırlatması ("Son yedek 12 gün önce"). | Denetim betiği hatasız geçiyor · her konu kör çözücü kontrolünden geçti (rehber §7) · her ders için 10 soruluk örneklem proje sahibince onaylandı · kısa tipler sitede çalışıyor · "(örnek)" not kalmadı |
+| **1.2** | Coğrafya tamam | Coğrafya'nın kalan 8 konusu (rehbere göre üretilir) · Keşif'teki Türkiye ve dünya yer konumlarının ders içeriğiyle karşılaştırılıp düzeltilmesi | Coğrafya 15/15 konu, denetim ve kör çözücü temiz |
+| **1.3** | Fizik ve Kimya | Öncelikli TYT Fizik ve işlemsiz TYT Kimya konuları (§2) | Öncelikli konular hazır, denetim ve kör çözücü temiz |
+| **1.4** | Biyoloji genişleme | AYT Biyoloji'nin kalan konuları, kullanım geri bildirimine göre | |
+| **sonra** | Senkron ve hız | Sunucu kararı (Supabase gerçekten gerekli mi, yoksa yedek dosya yeterli mi?) · gerçek telefonda açılış süresi ölçümü, büyük ders dosyalarının bölünmesi | |
 
-Sıra ihtiyaca göre değişebilir. Değişirse bu tablo güncellenir.
+Ara içerik güncellemeleri 1.x.y olarak yayınlanır (örn. 1.1.1: Türkçe taraması bitti). Sıra ihtiyaca göre değişebilir. Değişirse bu tablo güncellenir.
 
 ## 11. Kapsam dışı
 
