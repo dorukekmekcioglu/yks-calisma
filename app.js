@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev22"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev23"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -179,9 +179,51 @@
     });
     return sv;
   }
+  // g.iklimler: [{ e: "K", s: [12 aylık sıcaklık °C], y: [12 aylık yağış mm] }]  (1-4 grafik)
+  var AYLAR = ["O", "Ş", "M", "N", "M", "H", "T", "A", "E", "E", "K", "A"];
+  function iklimCiz(g) {
+    var L = g.iklimler, tek = L.length === 1;
+    var pw = tek ? 330 : 190, ph = tek ? 200 : 150, kol = tek ? 1 : 2;
+    var sat = Math.ceil(L.length / kol);
+    var sv = svgEl("svg", { viewBox: "0 0 " + pw * kol + " " + ph * sat, role: "img", "aria-label": "İklim grafiği" });
+    sv.appendChild(svgEl("rect", { width: pw * kol, height: ph * sat, rx: 12, fill: "var(--yuzey-2)" }));
+    L.forEach(function (c, i) {
+      var ox = (i % kol) * pw, oy = Math.floor(i / kol) * ph;
+      var sol = 34, sag = 34, ust = tek ? 26 : 24, alt = 22;
+      var W = pw - sol - sag, H = ph - ust - alt;
+      var tmin = Math.floor(Math.min.apply(null, c.s) / 10) * 10, tmax = Math.ceil(Math.max.apply(null, c.s) / 10) * 10;
+      if (tmin > 0) tmin = 0; if (tmax - tmin < 20) tmax = tmin + 20;
+      var ymax = Math.max.apply(null, c.y), ytop = ymax <= 100 ? 100 : Math.ceil(ymax / 100) * 100;
+      var TY = function (t) { return oy + ust + H - (t - tmin) / (tmax - tmin) * H; };
+      var PY = function (p) { return oy + ust + H - p / ytop * H; };
+      var fs = tek ? 11 : 9;
+      sv.appendChild(svgEl("text", { x: ox + pw / 2, y: oy + 15, "font-size": tek ? 12 : 11, "font-weight": "700", "text-anchor": "middle", fill: "var(--yazi)" }, c.e || ""));
+      for (var t = tmin; t <= tmax; t += 10) {
+        sv.appendChild(svgEl("line", { x1: ox + sol, x2: ox + sol + W, y1: TY(t), y2: TY(t), stroke: "var(--cizgi)", "stroke-width": ".6" }));
+        sv.appendChild(svgEl("text", { x: ox + sol - 4, y: TY(t) + 3, "font-size": fs, "text-anchor": "end", fill: "var(--soluk)" }, String(t)));
+      }
+      var adim = ytop / ((tmax - tmin) / 10);
+      for (var k = 0; k <= (tmax - tmin) / 10; k++) {
+        sv.appendChild(svgEl("text", { x: ox + sol + W + 4, y: TY(tmin + k * 10) + 3, "font-size": fs, fill: "var(--soluk)" }, String(Math.round(k * adim))));
+      }
+      var bw = W / 12;
+      c.y.forEach(function (p, j) {
+        var yy = PY(p * (ytop / ytop));
+        sv.appendChild(svgEl("rect", { x: ox + sol + j * bw + bw * .18, y: yy, width: bw * .64, height: Math.max(0, oy + ust + H - yy), fill: "#8fb8d8", opacity: ".85" }));
+      });
+      var d = c.s.map(function (v, j) { return (j ? "L" : "M") + (ox + sol + j * bw + bw / 2).toFixed(1) + " " + TY(v).toFixed(1); }).join("");
+      sv.appendChild(svgEl("path", { d: d, fill: "none", stroke: "#d9774e", "stroke-width": "2.2", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      c.s.forEach(function (v, j) { sv.appendChild(svgEl("circle", { cx: ox + sol + j * bw + bw / 2, cy: TY(v), r: 2.2, fill: "#d9774e" })); });
+      AYLAR.forEach(function (a, j) { sv.appendChild(svgEl("text", { x: ox + sol + j * bw + bw / 2, y: oy + ph - 7, "font-size": fs, "text-anchor": "middle", fill: "var(--soluk)" }, a)); });
+      sv.appendChild(svgEl("text", { x: ox + sol - 4, y: oy + ust - 6, "font-size": fs - 1, "text-anchor": "end", fill: "#d9774e" }, "°C"));
+      sv.appendChild(svgEl("text", { x: ox + sol + W + 4, y: oy + ust - 6, "font-size": fs - 1, fill: "#5b8db8" }, "mm"));
+    });
+    return sv;
+  }
   function gorselKutu(q) {
     if (!q.gorsel) return null;
     var kutu = h("div", { class: "soru-gorsel" });
+    if (q.gorsel.iklimler) { kutu.appendChild(iklimCiz(q.gorsel)); return kutu; }
     if (q.gorsel.svg) { kutu.innerHTML = q.gorsel.svg; return kutu; } // yalnızca kendi çizdiğimiz SVG
     haritaYukle().then(function () {
       var sv = haritaCiz(q.gorsel);
@@ -995,7 +1037,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev22" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev23" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",
