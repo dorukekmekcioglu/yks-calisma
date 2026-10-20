@@ -49,6 +49,8 @@ var KONULAR = [
   _k("tyt", "biyoloji", "canlilar", "Canlılar Dünyası ve Sınıflandırma", true),
   _k("tyt", "biyoloji", "ekoloji", "Ekosistem Ekolojisi", true),
   _k("tyt", "biyoloji", "kalitim", "Kalıtım", true),
+  _k("tyt", "biyoloji", "hayvan", "Hayvanlar Âlemi", true),
+  _k("tyt", "biyoloji", "virus", "Virüsler", true),
 
   _k("tyt", "sosyal", "harita", "Harita Bilgisi"),
   _k("tyt", "sosyal", "dunya", "Dünya'nın Şekli ve Hareketleri"),
