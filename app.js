@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev36"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.1-dev1"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -34,6 +34,17 @@
     if (c == null || c === false) return;
     if (Array.isArray(c)) { c.forEach(function (x) { ekle(el, x); }); return; }
     el.appendChild(c.nodeType ? c : document.createTextNode(String(c)));
+  }
+  // Soru metnindeki biçim işaretleri: __sözcük__ altı çizili, **sözcük** kalın. Güvenli: yalnız textContent ile kurulur.
+  function bicimli(metin) {
+    var parca = document.createDocumentFragment();
+    String(metin).split(/(__[^_]+(?:_[^_]+)*__|\*\*[^*]+\*\*)/).forEach(function (p) {
+      if (!p) return;
+      if (p.length > 4 && p.slice(0, 2) === "__" && p.slice(-2) === "__") { var u = document.createElement("u"); u.textContent = p.slice(2, -2); parca.appendChild(u); }
+      else if (p.length > 4 && p.slice(0, 2) === "**" && p.slice(-2) === "**") { var b = document.createElement("strong"); b.textContent = p.slice(2, -2); parca.appendChild(b); }
+      else parca.appendChild(document.createTextNode(p));
+    });
+    return parca;
   }
   function rastgele(dizi) { return dizi[Math.floor(Math.random() * dizi.length)]; }
 
@@ -552,8 +563,8 @@
         var s = kart.s, q = kart.q, cevaplandi = kart.secim != null;
         kap.appendChild(h("div", { class: "soru-alani" },
           h("p", { class: "kucuk" }, "Mini soru · az önce okuduklarından"),
-          h("p", { class: "soru-metin" }, q.soru),
-          q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, o); })) : null,
+          h("p", { class: "soru-metin" }, bicimli(q.soru)),
+          q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, bicimli(o)); })) : null,
           gorselKutu(q)));
         var alt = h("div", { class: "alt-alan" });
         if (cevaplandi) {
@@ -571,7 +582,7 @@
               kart.secim = poz; titret(poz === s.dogruYeri ? 12 : 25);
               cevapIsle(q, poz === s.dogruYeri); ciz();
             } },
-            h("span", { class: "harf" }, HARFLER[poz]), h("span", { class: "metin" }, q.secenekler[orj]));
+            h("span", { class: "harf" }, HARFLER[poz]), h("span", { class: "metin" }, bicimli(q.secenekler[orj])));
         })));
         if (cevaplandi) alt.appendChild(h("button", { class: "dugme", type: "button", onclick: ilerle }, "Devam"));
         kap.appendChild(alt);
@@ -783,8 +794,8 @@
           h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + (T.i / T.liste.length * 100) + "%" }))));
 
       var soru = h("div", { class: "soru-alani" },
-        h("p", { class: "soru-metin" }, q.soru),
-        q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, o); })) : null,
+        h("p", { class: "soru-metin" }, bicimli(q.soru)),
+        q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, bicimli(o)); })) : null,
         gorselKutu(q));
 
       var secenekler = h("div", { class: "secenekler" }, s.sira.map(function (orj, poz) {
@@ -801,7 +812,7 @@
             ciz();
           } },
           h("span", { class: "harf" }, HARFLER[poz]),
-          h("span", { class: "metin" }, q.secenekler[orj]));
+          h("span", { class: "metin" }, bicimli(q.secenekler[orj])));
       }));
 
       var alt = h("div", { class: "alt-alan" });
@@ -871,8 +882,8 @@
       kap.appendChild(h("h2", { class: "bolum-baslik" }, "Tekrar edeceklerim"));
       yanlislar.forEach(function (s) {
         kap.appendChild(h("div", { class: "kart tekrar-kart" },
-          h("p", { class: "soru-ozet" }, s.q.soru),
-          h("p", { class: "dogru-cevap" }, "Doğrusu: " + HARFLER[s.dogruYeri] + ") " + s.q.secenekler[s.sira[s.dogruYeri]]),
+          h("p", { class: "soru-ozet" }, bicimli(s.q.soru)),
+          h("p", { class: "dogru-cevap" }, "Doğrusu: " + HARFLER[s.dogruYeri] + ") ", bicimli(s.q.secenekler[s.sira[s.dogruYeri]])),
           s.q.dipnot ? h("p", { class: "kucuk" }, s.q.dipnot) : null));
       });
     }
@@ -1681,7 +1692,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev36" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.1-dev1" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",

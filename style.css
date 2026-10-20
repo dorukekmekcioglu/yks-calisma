@@ -548,3 +548,7 @@ body[data-bolum="gozden"] { --vurgu: #4d8a58; --vurgu-acik: #e1eedf; --vurgu-yaz
   :root:not([data-tema="acik"]) body[data-bolum="gozden"] { --vurgu: #94c196; --vurgu-acik: #24301f; --vurgu-yazi: #14201a; }
 }
 :root[data-tema="koyu"] body[data-bolum="gozden"] { --vurgu: #94c196; --vurgu-acik: #24301f; --vurgu-yazi: #14201a; }
+
+/* Soru metninde biçim işaretleri */
+.soru-metin u, .secenek .metin u, .oncul u, .soru-ozet u, .dogru-cevap u { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.soru-metin strong, .secenek .metin strong, .oncul strong, .soru-ozet strong { font-weight: 750; }
