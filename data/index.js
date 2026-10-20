@@ -53,7 +53,7 @@ var KONULAR = [
   _k("tyt", "biyoloji", "virus", "Virüsler", true),
 
   // Sıra: "12 Günde TYT Coğrafya" kampının gün sırasına göre (kullanıcının önerdiği oynatma listesi)
-  _k("tyt", "sosyal", "doga-insan", "Gün 1 · Doğa ve İnsan Etkileşimi"),
+  _k("tyt", "sosyal", "doga-insan", "Gün 1 · Doğa ve İnsan Etkileşimi", true),
   _k("tyt", "sosyal", "dunya", "Dünya'nın Şekli ve Hareketleri"),
   _k("tyt", "sosyal", "bolgeler", "Gün 2 · Bölgeler"),
   _k("tyt", "sosyal", "iklim", "Gün 3 · Atmosfer, Hava Durumu ve İklim"),
