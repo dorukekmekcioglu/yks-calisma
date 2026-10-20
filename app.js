@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev33"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev34"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -937,7 +937,26 @@
     kap.appendChild(h("button", { class: "oyun-kart", type: "button", onclick: function () { molaTurkiye(kap, "dokun", trTur); } },
       h("span", { class: "oyun-ikon", "aria-hidden": "true" }, "📍"),
       h("span", { class: "oyun-metin" }, h("b", null, "Haritada göster"), h("small", null, "Adı verilen yere dokun"))));
-    kap.appendChild(h("p", { class: "kucuk", style: "margin:14px 4px 0" }, "Konumlar yaklaşıktır; dokunma oyununda biraz pay verilir. Dünya haritasında boğaz ve deniz oyunu da yolda."));
+    // Dünya: boğaz, deniz, körfez, ada, yarımada
+    var dTur = kayit.oku("yks-mola-dtur", "hepsi");
+    var dGrup = h("div", { class: "etiketler" });
+    function dCiz() {
+      dGrup.replaceChildren();
+      (window.DUNYA_TURLER || [["hepsi", "Hepsi"], ["bogaz", "Boğaz ve kanallar"], ["deniz", "Denizler"], ["korfez", "Körfezler"], ["ada", "Adalar"], ["yarimada", "Yarımadalar"], ["col", "Çöller"], ["dag", "Dağlar"]]).forEach(function (x) {
+        dGrup.appendChild(h("button", { class: "etiket secilebilir", type: "button", "aria-pressed": String(dTur === x[0]),
+          onclick: function () { dTur = x[0]; kayit.yaz("yks-mola-dtur", dTur); dCiz(); } }, x[1]));
+      });
+    }
+    dCiz();
+    kap.appendChild(h("h2", { class: "bolum-baslik" }, "Dünya haritasında yerler"));
+    kap.appendChild(dGrup);
+    kap.appendChild(h("button", { class: "oyun-kart", type: "button", onclick: function () { molaYer(kap, "ad", dTur, YER_CFG.dunya); } },
+      h("span", { class: "oyun-ikon", "aria-hidden": "true" }, "🌊"),
+      h("span", { class: "oyun-metin" }, h("b", null, "İşaretli yer hangisi?"), h("small", null, "Haritadaki yerin adını seç"))));
+    kap.appendChild(h("button", { class: "oyun-kart", type: "button", onclick: function () { molaYer(kap, "dokun", dTur, YER_CFG.dunya); } },
+      h("span", { class: "oyun-ikon", "aria-hidden": "true" }, "📍"),
+      h("span", { class: "oyun-metin" }, h("b", null, "Haritada göster"), h("small", null, "Adı verilen yere dokun"))));
+    kap.appendChild(h("p", { class: "kucuk", style: "margin:14px 4px 0" }, "Konumlar yaklaşıktır; dokunma oyununda biraz pay verilir."));
   }
 
   function molaTur(kap, yon, kita) {
@@ -1111,26 +1130,33 @@
   }
 
   /* ---------- Mola: Türkiye yer şekilleri ---------- */
-  var trSozu = null;
-  function trYukle() {
-    if (window.TR_YERLER) return haritaYukle();
-    if (!trSozu) {
-      trSozu = new Promise(function (coz) {
+  var yerSozleri = {};
+  function yerYukle(cfg) {
+    if (window[cfg.degisken]) return haritaYukle();
+    if (!yerSozleri[cfg.dosya]) {
+      yerSozleri[cfg.dosya] = new Promise(function (coz) {
         var el = document.createElement("script");
-        el.src = "data/turkiye-yer.js";
+        el.src = "data/" + cfg.dosya + ".js";
         el.onload = el.onerror = function () { coz(); };
         document.head.appendChild(el);
       });
     }
-    return trSozu.then(haritaYukle);
+    return yerSozleri[cfg.dosya].then(haritaYukle);
   }
-  var TR_ISIM = { dag: "dağ", ova: "ova", plato: "plato", gol: "göl", akarsu: "akarsu" };
+  var YER_CFG = {
+    turkiye: { harita: "turkiye", degisken: "TR_YERLER", dosya: "turkiye-yer", k: 0.78, nokta: 11, cizgi: 5,
+      isim: { dag: "dağ", ova: "ova", plato: "plato", gol: "göl", akarsu: "akarsu" } },
+    dunya: { y0: 12, yh: 284, harita: "dunya", degisken: "DUNYA_YERLER", dosya: "dunya-yer", k: 0.8, nokta: 6, cizgi: 3,
+      isim: { bogaz: "boğaz", deniz: "deniz", korfez: "körfez", ada: "ada", yarimada: "yarımada", col: "çöl", dag: "dağ" } }
+  };
+  function molaTurkiye(kap, mod, tur) { molaYer(kap, mod, tur, YER_CFG.turkiye); }
 
-  function molaTurkiye(kap, mod, tur) {
+  function molaYer(kap, mod, tur, cfg) {
+    var TR_ISIM = cfg.isim;
     kap.replaceChildren();
     kap.appendChild(h("p", { class: "kucuk" }, "Harita hazırlanıyor…"));
-    trYukle().then(function () {
-      var hr = window.HARITALAR && window.HARITALAR.turkiye, tum = window.TR_YERLER;
+    yerYukle(cfg).then(function () {
+      var hr = window.HARITALAR && window.HARITALAR[cfg.harita], tum = window[cfg.degisken];
       if (!hr || !tum) { kap.replaceChildren(); kap.appendChild(h("p", { class: "kucuk" }, "Harita yüklenemedi, biraz sonra tekrar dene.")); return; }
       var havuz = tum.filter(function (y) { return tur === "hepsi" || y[1] === tur; });
       var N = Math.min(10, havuz.length);
@@ -1141,7 +1167,7 @@
 
       function cizgiMi(y) { return Array.isArray(y[2][0]); }
       function uzaklik(y, lon, lat) { // derece (boylam enleme göre küçültülmüş)
-        var k = 0.78;
+        var k = cfg.k;
         function nok(a, b) { return Math.sqrt(Math.pow((a[0] - b[0]) * k, 2) + Math.pow(a[1] - b[1], 2)); }
         if (!cizgiMi(y)) return nok(y[2], [lon, lat]);
         var en = 1e9;
@@ -1155,20 +1181,22 @@
         return en;
       }
       function haritaCizTR(y, goster, renk) {
-        var sv = svgEl("svg", { viewBox: "0 0 " + hr.w + " " + hr.h, class: "ulke-harita", role: "img", "aria-label": "Türkiye haritası" });
+        var trMi = cfg.harita === "turkiye";
+        var sv = svgEl("svg", { viewBox: "0 " + (cfg.y0 || 0) + " " + hr.w + " " + (cfg.yh || hr.h), class: "ulke-harita", role: "img", "aria-label": trMi ? "Türkiye haritası" : "Dünya haritası" });
         sv.appendChild(svgEl("rect", { width: hr.w, height: hr.h, fill: "var(--yuzey-2)" }));
         if (hr.komsu) sv.appendChild(svgEl("path", { d: hr.komsu, fill: "var(--cizgi)", stroke: "var(--yuzey)", "stroke-width": ".8" }));
-        sv.appendChild(svgEl("path", { d: hr.yol, fill: "var(--vurgu-acik)", stroke: "var(--vurgu)", "stroke-width": "1.2", "stroke-linejoin": "round" }));
+        if (trMi) sv.appendChild(svgEl("path", { d: hr.yol, fill: "var(--vurgu-acik)", stroke: "var(--vurgu)", "stroke-width": "1.2", "stroke-linejoin": "round" }));
+        else sv.appendChild(svgEl("path", { d: hr.yol, fill: "var(--cizgi)", stroke: "var(--soluk)", "stroke-width": ".4", "stroke-linejoin": "round" }));
         if (goster) isaretle(sv, y, renk || "var(--vurgu)");
         return sv;
       }
       function isaretle(sv, y, renk) {
         if (cizgiMi(y)) {
           var d = y[2].map(function (p, q) { return (q ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1); }).join("");
-          sv.appendChild(svgEl("path", { d: d, fill: "none", stroke: "var(--yuzey)", "stroke-width": "9", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".7" }));
-          sv.appendChild(svgEl("path", { d: d, fill: "none", stroke: renk, "stroke-width": "5", "stroke-linecap": "round", "stroke-linejoin": "round" }));
+          sv.appendChild(svgEl("path", { d: d, fill: "none", stroke: "var(--yuzey)", "stroke-width": cfg.cizgi + 4, "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".7" }));
+          sv.appendChild(svgEl("path", { d: d, fill: "none", stroke: renk, "stroke-width": cfg.cizgi, "stroke-linecap": "round", "stroke-linejoin": "round" }));
         } else {
-          sv.appendChild(svgEl("circle", { cx: X(y[2][0]), cy: Y(y[2][1]), r: 11, fill: renk, stroke: "var(--yuzey)", "stroke-width": "3" }));
+          sv.appendChild(svgEl("circle", { cx: X(y[2][0]), cy: Y(y[2][1]), r: cfg.nokta, fill: renk, stroke: "var(--yuzey)", "stroke-width": cfg.nokta > 8 ? 3 : 2 }));
         }
       }
 
@@ -1207,13 +1235,13 @@
           sv.addEventListener("click", function (e) {
             if (bitti) return; bitti = true;
             var r = sv.getBoundingClientRect();
-            var olcek = Math.max(hr.w / r.width, hr.h / r.height);
-            var px = (e.clientX - r.left - (r.width - hr.w / olcek) / 2) * olcek, py = (e.clientY - r.top - (r.height - hr.h / olcek) / 2) * olcek;
+            var vh = cfg.yh || hr.h, olcek = Math.max(hr.w / r.width, vh / r.height);
+            var px = (e.clientX - r.left - (r.width - hr.w / olcek) / 2) * olcek, py = (e.clientY - r.top - (r.height - vh / olcek) / 2) * olcek + (cfg.y0 || 0);
             var lon = px / hr.sx + hr.lon0, lat = hr.lat0 - py / hr.sy;
             var tamam = uzaklik(y, lon, lat) <= (y[3] || 0.4) * 1.3;
             titret(tamam ? 12 : 25);
             isaretle(sv, y, "var(--iyi)");
-            sv.appendChild(svgEl("circle", { cx: px, cy: py, r: 8, fill: tamam ? "var(--iyi)" : "var(--tekrar)", stroke: "var(--yuzey)", "stroke-width": "3" }));
+            sv.appendChild(svgEl("circle", { cx: px, cy: py, r: Math.round(cfg.nokta * .75), fill: tamam ? "var(--iyi)" : "var(--tekrar)", stroke: "var(--yuzey)", "stroke-width": "3" }));
             if (tamam) { dogru++; geri.textContent = "Güzel 🌿"; } else { kacan.push(y); geri.textContent = "Yeşil işaretli yer " + y[0] + "."; }
             devam.hidden = false;
           });
@@ -1229,7 +1257,7 @@
           h("h2", null, N + " sorudan " + dogru + "'i oturdu"),
           h("p", { class: "alt" }, kacan.length ? "Şunlara bir daha göz atalım:" : "Hepsi yerli yerinde, harika 🌿")));
         if (kacan.length) kap.appendChild(h("div", { class: "kart" }, kacan.map(function (x) { return h("p", { class: "kacan" }, h("b", null, x[0]), " · " + TR_ISIM[x[1]]); })));
-        kap.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { molaTurkiye(kap, mod, tur); } }, "Bir tur daha"));
+        kap.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { molaYer(kap, mod, tur, cfg); } }, "Bir tur daha"));
         kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Mola menüsü"));
       }
       ciz();
@@ -1594,7 +1622,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev33" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev34" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",
