@@ -1,15 +1,23 @@
 {
   "name": "YKS Çalışma Köşesi",
   "short_name": "YKS",
-  "description": "Coğrafya ve Biyoloji için kısa YKS soruları",
+  "description": "Uzanırken, dinlenirken kısa ve rahat YKS tekrarı",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fafaf8",
-  "theme_color": "#3b7a6a",
+  "background_color": "#faf6ef",
+  "theme_color": "#faf6ef",
   "lang": "tr",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }

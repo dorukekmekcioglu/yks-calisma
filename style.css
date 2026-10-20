@@ -227,6 +227,20 @@ a { color: inherit; }
 .ozet ul { margin: 0; padding-left: 20px; }
 .ozet li + li { margin-top: 8px; }
 
+/* güncelleme bildirimi ve yenilikler */
+.guncelleme {
+  position: fixed; left: 12px; right: 12px; bottom: calc(var(--sekme-y) + 16px + env(safe-area-inset-bottom)); z-index: 25;
+  max-width: 536px; margin: 0 auto; display: flex; align-items: center; gap: 8px;
+  padding: 8px 8px 8px 18px; border-radius: 18px;
+  background: var(--yazi); color: var(--zemin); font-weight: 600; animation: belir .2s ease-out;
+}
+body.testte .guncelleme { bottom: calc(16px + env(safe-area-inset-bottom)); }
+.guncelleme span { flex: 1; }
+.guncelleme .yenile { min-height: 44px; padding: 0 18px; border: 0; border-radius: 13px; background: var(--vurgu); color: var(--vurgu-yazi); font-weight: 700; cursor: pointer; }
+.guncelleme .sonra { width: 40px; height: 44px; border: 0; background: none; color: inherit; opacity: .7; cursor: pointer; }
+.yenilik-liste { margin: 0 0 16px; padding-left: 20px; }
+.yenilik-liste li + li { margin-top: 8px; }
+
 /* küçük, yumuşak bilgi mesajı */
 .mesaj {
   position: fixed; left: 50%; bottom: calc(var(--sekme-y) + 24px + env(safe-area-inset-bottom)); z-index: 20;

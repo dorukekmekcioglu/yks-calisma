@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0 (geliştirme)";
+  var SURUM = "1.0-dev1"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -622,4 +622,64 @@
 
   window.addEventListener("hashchange", rota);
   rota();
+
+  /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
+  // Anahtar: sürümün ana numarası ("1.0-dev1" için "1.0"). Her yayında buraya madde eklenir.
+  var YENILIKLER = {
+    "1.0": [
+      "Yepyeni, sade ve sıcak bir görünüm",
+      "Konulara göre özet, çalış ve tekrar sayfaları",
+      "Anlık geri bildirimli ya da sonda sonuçlu testler",
+      "Unutmadan tekrar: öğrendiklerin doğru zamanda karşına çıkar"
+    ]
+  };
+
+  function yenilikleriGoster() {
+    var onceki = kayit.oku("yks-gorulen-surum", null);
+    kayit.yaz("yks-gorulen-surum", SURUM);
+    if (!onceki || onceki === SURUM) return; // ilk kurulumda gösterilmez
+    var liste = YENILIKLER[SURUM.split("-")[0]];
+    if (!liste) return;
+    var perde = h("div", { class: "perde" },
+      h("div", { class: "sheet", role: "dialog", "aria-label": "Yenilikler" },
+        h("h2", null, "Yenilikler 💗"),
+        h("ul", { class: "yenilik-liste" }, liste.map(function (m) { return h("li", null, m); })),
+        h("button", { class: "dugme", type: "button", onclick: function () { perde.remove(); } }, "Tamam")));
+    document.body.appendChild(perde);
+  }
+
+  function guncellemeBildir(bekleyen) {
+    if (document.querySelector(".guncelleme")) return;
+    var cubuk = h("div", { class: "guncelleme", role: "status" },
+      h("span", null, "Yeni sürüm hazır 💗"),
+      h("button", { type: "button", class: "yenile", onclick: function () { bekleyen.postMessage({ type: "SKIP_WAITING" }); } }, "Yenile"),
+      h("button", { type: "button", class: "sonra", "aria-label": "Sonra", onclick: function () { cubuk.remove(); } }, "✕"));
+    document.body.appendChild(cubuk);
+  }
+
+  if ("serviceWorker" in navigator) {
+    var yenileniyor = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (yenileniyor || !navigator.serviceWorker.controller) return;
+      yenileniyor = true;
+      location.reload();
+    });
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").then(function (reg) {
+        if (reg.waiting && navigator.serviceWorker.controller) guncellemeBildir(reg.waiting);
+        reg.addEventListener("updatefound", function () {
+          var yeni = reg.installing;
+          if (!yeni) return;
+          yeni.addEventListener("statechange", function () {
+            if (yeni.state === "installed" && navigator.serviceWorker.controller) guncellemeBildir(yeni);
+          });
+        });
+        // Uygulama arka plandan açılınca yeni sürüm var mı diye bakar.
+        document.addEventListener("visibilitychange", function () {
+          if (document.visibilityState === "visible") reg.update().catch(function () {});
+        });
+      }).catch(function () {});
+    });
+  }
+  yenilikleriGoster();
 })();
