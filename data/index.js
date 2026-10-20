@@ -55,7 +55,7 @@ var KONULAR = [
   // Sıra: "12 Günde TYT Coğrafya" kampının gün sırasına göre (kullanıcının önerdiği oynatma listesi)
   _k("tyt", "sosyal", "doga-insan", "Doğa ve İnsan Etkileşimi", true),
   _k("tyt", "sosyal", "dunya", "Dünya'nın Şekli ve Hareketleri"),
-  _k("tyt", "sosyal", "bolgeler", "Bölgeler"),
+  _k("tyt", "sosyal", "bolgeler", "Bölgeler", true),
   _k("tyt", "sosyal", "iklim", "Atmosfer, Hava Durumu ve İklim"),
   _k("tyt", "sosyal", "nufus", "Nüfus"),
   _k("tyt", "sosyal", "afet", "Doğal Afetler"),
