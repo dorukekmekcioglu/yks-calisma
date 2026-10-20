@@ -70,6 +70,13 @@ var KONULAR = [
   _k("tyt", "sosyal", "koordinat", "Coğrafi Konum: Koordinat Sistemi ve Yerel Saat", true),
   _k("tyt", "sosyal", "harita", "Harita Bilgisi", true),
 
+  // TYT Türkçe: yazım kuralları (kaynak: kullanıcının Suat Toker notları)
+  _k("tyt", "turkce", "buyuk-harf", "Büyük Harflerin Kullanımı", true),
+  _k("tyt", "turkce", "sayi-ikileme", "Sayıların ve İkilemelerin Yazımı", true),
+  _k("tyt", "turkce", "ayri-birlesik", "Ayrı Yazılan Birleşik Kelimeler", true),
+  _k("tyt", "turkce", "bitisik-birlesik", "Bitişik Yazılan Birleşik Kelimeler", true),
+  _k("tyt", "turkce", "mi-ki-kisaltma", "mi, ki, de ve Kısaltmaların Yazımı", true),
+
   _k("ayt", "biyoloji", "sinir", "Sinir Sistemi", true),
   _k("ayt", "biyoloji", "endokrin", "Endokrin Sistem", true)
 ];
