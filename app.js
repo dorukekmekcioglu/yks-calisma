@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev19"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev20"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -303,7 +303,29 @@
       if (!harita[m.baslik]) { harita[m.baslik] = { ad: m.baslik, maddeler: [] }; liste.push(harita[m.baslik]); }
       harita[m.baslik].maddeler.push(m);
     });
-    return liste;
+    // 3 karttan az olan bölümler, yan yana olanlarla ortak bir bölümde toplanır.
+    var sonuc = [], grup = null;
+    function grubuBitir() {
+      if (!grup) return;
+      if (grup.maddeler.length < 3 && sonuc.length) {
+        var onceki = sonuc[sonuc.length - 1];
+        onceki.maddeler = onceki.maddeler.concat(grup.maddeler);
+        if (onceki.parca) { onceki.parca += grup.parca; onceki.ad = onceki.ilk + " (+" + (onceki.parca - 1) + " başlık)"; }
+      } else {
+        if (grup.parca > 1) grup.ad = grup.ilk + " (+" + (grup.parca - 1) + " başlık)";
+        sonuc.push(grup);
+      }
+      grup = null;
+    }
+    liste.forEach(function (b) {
+      if (b.maddeler.length >= 3) { grubuBitir(); sonuc.push(b); return; }
+      if (!grup) grup = { ad: b.ad, ilk: b.ad, parca: 0, maddeler: [] };
+      grup.parca++;
+      grup.maddeler = grup.maddeler.concat(b.maddeler);
+      if (grup.maddeler.length >= 3) grubuBitir();
+    });
+    grubuBitir();
+    return sonuc;
   }
 
   // "Tekrar bak" denen madde yarın tekrar listesine düşer (yalnızca soruyla bağlı maddeler).
@@ -991,7 +1013,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev19" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev20" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",
