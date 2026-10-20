@@ -80,6 +80,7 @@ Her konunun **Özet** sekmesi olur: bilgi maddeleri kısa ve kompakt notlar hali
 > - Konu sayfası sekmeleri **Özet · Test · Tekrar** (eski adı "Çalış"). Özet yeşil/kart temalı, Test toprak rengi/soru temalı, Tekrar bal rengi; her sekmenin altında kısa bir tanım satırı görünür.
 > - Özet **kart akışıdır**: bölüm seç, kartları gez. **Sağa kaydır / "Yess!"** = oturdu, **sola kaydır / "Tam oturmadı sanki?"** = tekrar listesine. Bilgisayarda ← → tuşları da çalışır.
 > - Ana sayfa yeniden düzenlenecek: üstte selamlama + not, altında ilerleme, altında Kısa tur butonu; selamlayan bir karakter (gündüz/gece) planlanıyor.
+> - **Mola sekmesi "Keşif" oldu** (alt başlık "Harita oyunları", dünya simgesi, serin mavi tema): başkent bul, haritada ülke bulma, Türkiye ve dünya yer şekilleri oyunları; haritalar sürüklenip yakınlaştırılabilir. Mola'daki "aşk notu yok" kuralı geçerli.
 
 Alt sekme çubuğu (eski plan, **4 sekme** idi; yukarıdaki karar geçerli):
 

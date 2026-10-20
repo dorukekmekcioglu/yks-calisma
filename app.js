@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev34"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev35"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -906,7 +906,7 @@
         h("span", { class: "oyun-ikon", "aria-hidden": "true" }, ikon),
         h("span", { class: "oyun-metin" }, h("b", null, baslik), h("small", null, alt)));
     }
-    kap.appendChild(h("p", { class: "kucuk", style: "margin:0 4px 14px" }, "Dersten bağımsız, rahat bir köşe. Süre yok, puan yok; tur bitince nerede olduğuna bakarız."));
+    kap.appendChild(h("p", { class: "kucuk", style: "margin:0 4px 14px" }, "Haritalarla rahat bir köşe. Süre yok, puan yok; haritayı sürükleyip + − ile yakınlaştırabilirsin."));
     kap.appendChild(h("h2", { class: "bolum-baslik" }, "Bölge seç"));
     kap.appendChild(kitaGrup);
     kap.appendChild(h("h2", { class: "bolum-baslik" }, "Oyunlar"));
@@ -995,7 +995,7 @@
         secenekKutu.appendChild(b);
       });
       kap.appendChild(h("div", { class: "mola-ust" },
-        h("button", { class: "kapat", type: "button", "aria-label": "Molaya dön", onclick: function () { molaMenu(kap); } }, "✕"),
+        h("button", { class: "kapat", type: "button", "aria-label": "Keşfe dön", onclick: function () { molaMenu(kap); } }, "✕"),
         h("span", { class: "kucuk" }, (i + 1) + " / " + N)));
       kap.appendChild(h("div", { class: "kart mola-soru" }, h("p", { class: "soru-metin" }, s.soru)));
       kap.appendChild(secenekKutu);
@@ -1013,9 +1013,65 @@
         })));
       }
       kap.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { molaTur(kap, yon, kita); } }, "Bir tur daha"));
-      kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Mola menüsü"));
+      kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Keşif menüsü"));
     }
     ciz();
+  }
+
+  /* ---------- harita yakınlaştırma: + / − düğmeleri, sürükleme, iki parmakla büyütme, fare tekerleği ---------- */
+  function yakinlastirmaBagla(kutu, sv, tam) { // tam: [x, y, genişlik, yükseklik] (en geniş görünüm)
+    var vb = sv.getAttribute("viewBox").split(" ").map(Number), ilk = vb.slice();
+    var asp = vb[3] / vb[2], enGenis = Math.min(tam[2], tam[3] / asp), enDar = enGenis / 10;
+    var ptr = {}, bastir = false, hareket = 0;
+    function uygula() {
+      vb[2] = Math.max(enDar, Math.min(enGenis, vb[2])); vb[3] = vb[2] * asp;
+      vb[0] = Math.max(tam[0], Math.min(tam[0] + tam[2] - vb[2], vb[0]));
+      vb[1] = Math.max(tam[1], Math.min(tam[1] + tam[3] - vb[3], vb[1]));
+      sv.setAttribute("viewBox", vb.map(function (x) { return +x.toFixed(2); }).join(" "));
+    }
+    function olc() { var r = sv.getBoundingClientRect(); return { r: r, o: Math.max(vb[2] / r.width, vb[3] / r.height) }; }
+    function yakin(faktor, cx, cy) {
+      var m = olc(), ox = (m.r.width - vb[2] / m.o) / 2, oy = (m.r.height - vb[3] / m.o) / 2;
+      var px = vb[0] + (cx - m.r.left - ox) * m.o, py = vb[1] + (cy - m.r.top - oy) * m.o;
+      var nw = Math.max(enDar, Math.min(enGenis, vb[2] / faktor)), oran = nw / vb[2];
+      vb[0] = px - (px - vb[0]) * oran; vb[1] = py - (py - vb[1]) * oran; vb[2] = nw;
+      uygula();
+    }
+    function merkez(f) { var r = sv.getBoundingClientRect(); yakin(f, r.left + r.width / 2, r.top + r.height / 2); }
+    sv.style.touchAction = "none";
+    sv.addEventListener("click", function (e) { if (bastir) { e.stopPropagation(); e.preventDefault(); bastir = false; } }, true);
+    sv.addEventListener("wheel", function (e) { e.preventDefault(); yakin(e.deltaY < 0 ? 1.25 : 0.8, e.clientX, e.clientY); }, { passive: false });
+    sv.addEventListener("pointerdown", function (e) {
+      bastir = false; hareket = 0; ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
+      function tasi(ev) {
+        var p = ptr[ev.pointerId]; if (!p) return;
+        var idler = Object.keys(ptr);
+        if (idler.length === 1) {
+          var dx = ev.clientX - p.x, dy = ev.clientY - p.y; hareket += Math.abs(dx) + Math.abs(dy);
+          if (hareket > 8) { bastir = true; var m = olc(); vb[0] -= dx * m.o; vb[1] -= dy * m.o; uygula(); }
+        } else if (idler.length === 2) {
+          var d0 = Math.hypot(ptr[idler[0]].x - ptr[idler[1]].x, ptr[idler[0]].y - ptr[idler[1]].y);
+          ptr[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+          var d1 = Math.hypot(ptr[idler[0]].x - ptr[idler[1]].x, ptr[idler[0]].y - ptr[idler[1]].y);
+          bastir = true;
+          if (d0 > 0) yakin(d1 / d0, (ptr[idler[0]].x + ptr[idler[1]].x) / 2, (ptr[idler[0]].y + ptr[idler[1]].y) / 2);
+          return;
+        }
+        ptr[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+      }
+      function bitir(ev) { delete ptr[ev.pointerId]; if (!Object.keys(ptr).length) { document.removeEventListener("pointermove", tasi); document.removeEventListener("pointerup", bitir); document.removeEventListener("pointercancel", bitir); } }
+      document.addEventListener("pointermove", tasi); document.addEventListener("pointerup", bitir); document.addEventListener("pointercancel", bitir);
+    });
+    kutu.classList.add("yakinlastirilir");
+    kutu.appendChild(h("div", { class: "zoom-dugmeler" },
+      h("button", { type: "button", "aria-label": "Yakınlaştır", onclick: function () { merkez(1.6); } }, "+"),
+      h("button", { type: "button", "aria-label": "Uzaklaştır", onclick: function () { merkez(0.625); } }, "−"),
+      h("button", { type: "button", "aria-label": "Sıfırla", onclick: function () { vb = ilk.slice(); uygula(); } }, "⟲")));
+  }
+  // Ekrandaki dokunma noktasını SVG koordinatına çevirir (güncel viewBox'a göre).
+  function svNokta(sv, e) {
+    var b = sv.viewBox.baseVal, r = sv.getBoundingClientRect(), o = Math.max(b.width / r.width, b.height / r.height);
+    return [b.x + (e.clientX - r.left - (r.width - b.width / o) / 2) * o, b.y + (e.clientY - r.top - (r.height - b.height / o) / 2) * o];
   }
 
   /* ---------- Mola: haritada ülke ---------- */
@@ -1074,7 +1130,7 @@
         var geri = h("div", { class: "geri-yer" });
         var devam = h("button", { class: "dugme", type: "button", hidden: "", onclick: function () { i++; ciz(); } }, i === N - 1 ? "Bitir" : "Devam");
         var ust = h("div", { class: "mola-ust" },
-          h("button", { class: "kapat", type: "button", "aria-label": "Molaya dön", onclick: function () { molaMenu(kap); } }, "✕"),
+          h("button", { class: "kapat", type: "button", "aria-label": "Keşfe dön", onclick: function () { molaMenu(kap); } }, "✕"),
           h("span", { class: "kucuk" }, (i + 1) + " / " + N));
         kap.appendChild(ust);
 
@@ -1083,7 +1139,7 @@
           var sec = karistir([u[0]].concat(diger));
           var hr = haritaKur(u, null);
           kap.appendChild(h("div", { class: "kart mola-soru" }, h("p", { class: "soru-metin" }, "Renkli ülke hangisi?")));
-          kap.appendChild(h("div", { class: "harita-kutu" }, hr.sv));
+          var kutuAd = h("div", { class: "harita-kutu" }, hr.sv); kap.appendChild(kutuAd); yakinlastirmaBagla(kutuAd, hr.sv, [0, 0, H.w, H.h]);
           var secenekKutu = h("div", { class: "secenekler" });
           sec.forEach(function (m, p) {
             secenekKutu.appendChild(h("button", { class: "secenek", type: "button", onclick: function () {
@@ -1110,7 +1166,7 @@
             }
             devam.hidden = false;
           });
-          kap.appendChild(h("div", { class: "harita-kutu" }, hr2.sv));
+          var kutuDokun = h("div", { class: "harita-kutu" }, hr2.sv); kap.appendChild(kutuDokun); yakinlastirmaBagla(kutuDokun, hr2.sv, [0, 0, H.w, H.h]);
         }
         kap.appendChild(geri);
         kap.appendChild(devam);
@@ -1123,7 +1179,7 @@
           h("p", { class: "alt" }, kacan.length ? "Şunlara bir daha göz atalım:" : "Hepsi yerli yerinde, harika 🌿")));
         if (kacan.length) kap.appendChild(h("div", { class: "kart" }, kacan.map(function (x) { return h("p", { class: "kacan" }, h("b", null, x[0])); })));
         kap.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { molaHarita(kap, mod, kita); } }, "Bir tur daha"));
-        kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Mola menüsü"));
+        kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Keşif menüsü"));
       }
       ciz();
     });
@@ -1207,14 +1263,15 @@
         var geri = h("div", { class: "geri-yer" });
         var devam = h("button", { class: "dugme", type: "button", hidden: "", onclick: function () { i++; ciz(); } }, i === N - 1 ? "Bitir" : "Devam");
         kap.appendChild(h("div", { class: "mola-ust" },
-          h("button", { class: "kapat", type: "button", "aria-label": "Molaya dön", onclick: function () { molaMenu(kap); } }, "✕"),
+          h("button", { class: "kapat", type: "button", "aria-label": "Keşfe dön", onclick: function () { molaMenu(kap); } }, "✕"),
           h("span", { class: "kucuk" }, (i + 1) + " / " + N)));
         if (mod === "ad") {
           var ayni = havuz.filter(function (x) { return x !== y && x[1] === y[1]; });
           if (ayni.length < 4) ayni = tum.filter(function (x) { return x !== y && x[1] === y[1]; });
           var sec = karistir([y[0]].concat(karistir(ayni).slice(0, 4).map(function (x) { return x[0]; })));
           kap.appendChild(h("div", { class: "kart mola-soru" }, h("p", { class: "soru-metin" }, "İşaretli " + TR_ISIM[y[1]] + " hangisi?")));
-          kap.appendChild(h("div", { class: "harita-kutu" }, haritaCizTR(y, true)));
+          var svA = haritaCizTR(y, true), kutuA = h("div", { class: "harita-kutu" }, svA); kap.appendChild(kutuA);
+          yakinlastirmaBagla(kutuA, svA, [0, cfg.y0 || 0, hr.w, cfg.yh || hr.h]);
           var kutu = h("div", { class: "secenekler" });
           sec.forEach(function (m, p) {
             kutu.appendChild(h("button", { class: "secenek", type: "button", onclick: function () {
@@ -1234,9 +1291,7 @@
           sv.style.touchAction = "manipulation";
           sv.addEventListener("click", function (e) {
             if (bitti) return; bitti = true;
-            var r = sv.getBoundingClientRect();
-            var vh = cfg.yh || hr.h, olcek = Math.max(hr.w / r.width, vh / r.height);
-            var px = (e.clientX - r.left - (r.width - hr.w / olcek) / 2) * olcek, py = (e.clientY - r.top - (r.height - vh / olcek) / 2) * olcek + (cfg.y0 || 0);
+            var nk = svNokta(sv, e), px = nk[0], py = nk[1];
             var lon = px / hr.sx + hr.lon0, lat = hr.lat0 - py / hr.sy;
             var tamam = uzaklik(y, lon, lat) <= (y[3] || 0.4) * 1.3;
             titret(tamam ? 12 : 25);
@@ -1245,7 +1300,8 @@
             if (tamam) { dogru++; geri.textContent = "Güzel 🌿"; } else { kacan.push(y); geri.textContent = "Yeşil işaretli yer " + y[0] + "."; }
             devam.hidden = false;
           });
-          kap.appendChild(h("div", { class: "harita-kutu" }, sv));
+          var kutuD = h("div", { class: "harita-kutu" }, sv); kap.appendChild(kutuD);
+          yakinlastirmaBagla(kutuD, sv, [0, cfg.y0 || 0, hr.w, cfg.yh || hr.h]);
         }
         kap.appendChild(geri);
         kap.appendChild(devam);
@@ -1258,7 +1314,7 @@
           h("p", { class: "alt" }, kacan.length ? "Şunlara bir daha göz atalım:" : "Hepsi yerli yerinde, harika 🌿")));
         if (kacan.length) kap.appendChild(h("div", { class: "kart" }, kacan.map(function (x) { return h("p", { class: "kacan" }, h("b", null, x[0]), " · " + TR_ISIM[x[1]]); })));
         kap.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { molaYer(kap, mod, tur, cfg); } }, "Bir tur daha"));
-        kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Mola menüsü"));
+        kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Keşif menüsü"));
       }
       ciz();
     });
@@ -1469,7 +1525,7 @@
       if (!T) { location.replace("#/"); return null; }
       return testGorunum();
     },
-    mola: function () {
+    kesif: function () {
       var kap = h("div", { class: "mola-kap" });
       var yuk = new Promise(function (coz) {
         if (window.MOLA_ULKELER) return coz();
@@ -1479,8 +1535,9 @@
         document.head.appendChild(el);
       });
       yuk.then(function () { molaMenu(kap); });
-      return [h("header", { class: "ust" }, h("h1", null, "Mola")), kap];
+      return [h("header", { class: "ust" }, h("h1", null, "Keşif"), h("p", { class: "alt-baslik" }, "Harita oyunları")), kap];
     },
+    mola: function () { return this.kesif(); },
     "gozden-gecir": function () {
       var govde = h("div", null, h("p", { class: "kucuk" }, "Yükleniyor…"));
       var dosyalar = [];
@@ -1604,6 +1661,8 @@
   function rota() {
     var yol = (location.hash.replace(/^#\/?/, "") || "ana").split("/");
     var ad = sayfalar[yol[0]] ? yol[0] : "ana";
+    if (ad === "mola") ad = "kesif";
+    document.body.dataset.bolum = ad === "kesif" ? "kesif" : "";
     document.querySelectorAll(".sekmeler a").forEach(function (a) {
       if (a.dataset.sekme === (ad === "konu" ? "ana" : ad)) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
@@ -1622,7 +1681,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev34" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev35" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",
