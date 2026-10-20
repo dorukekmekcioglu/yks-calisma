@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev28"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev29"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -40,7 +40,8 @@
   function selam() {
     var s = new Date().getHours();
     var g = s < 6 ? "İyi geceler" : s < 12 ? "Günaydın" : s < 18 ? "İyi günler" : "İyi akşamlar";
-    return g + (window.ISIM ? ", " + window.ISIM : "");
+    var isim = kayit.oku("yks-isim", "") || window.ISIM;
+    return g + (isim ? ", " + isim : "");
   }
 
   // Sevgilinin notları öncelikli: üçte iki olasılıkla onlardan biri seçilir.
@@ -738,6 +739,17 @@
     cevapIsle(T.liste[i].q, T.secim[i] === T.liste[i].dogruYeri);
   }
 
+  // Soruyu bulmaya yetecek bilgiyi panoya kopyalar; kullanıcı bunu geliştiriciye iletir.
+  function sorunBildir(q) {
+    var metin = "Soru sorunu\nKimlik: " + q.id + "\nSoru: " + q.soru + "\n" +
+      q.secenekler.map(function (x, i) { return HARFLER[i] + ") " + x; }).join("\n") +
+      "\nKayıtlı doğru: " + HARFLER[q.dogru] + "\nSürüm: " + SURUM;
+    function bitti() { mesaj("Soru bilgisi kopyalandı. Bana yapıştırman yeterli 🌿"); }
+    try {
+      navigator.clipboard.writeText(metin).then(bitti, function () { prompt("Bunu kopyala:", metin); });
+    } catch (e) { prompt("Bunu kopyala:", metin); }
+  }
+
   function testGorunum() {
     var kap = h("div", { class: "test-kap" });
     document.body.classList.add("testte");
@@ -789,6 +801,7 @@
       if (cevaplandi) {
         alt.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { cevabiKaydet(T.i); T.i++; yarimKaydet(); ciz(); } },
           T.i === T.liste.length - 1 ? "Bitir" : "Devam"));
+        alt.appendChild(h("button", { class: "link-dugme kucuk-baglanti", type: "button", onclick: function () { sorunBildir(q); } }, "Bu soruda bir sorun var"));
       }
 
       kap.appendChild(ust); kap.appendChild(soru); kap.appendChild(alt);
@@ -921,8 +934,7 @@
 
       // 4) daha fazlası
       var hizli = h("div", { class: "hizli" },
-        h("button", { class: "dugme ikincil", type: "button", onclick: function () { modSec(function (mod) { tumSorular(function (hepsi) { testBaslat("Karışık test", hepsi.slice(0, 20), mod); }); }); } }, "20 soruluk karışık test"),
-        h("button", { class: "dugme ikincil", type: "button", onclick: function () { mesaj("Özelleştirme birazdan hazır 🌿"); } }, "Özelleştir"));
+        h("button", { class: "dugme ikincil", type: "button", onclick: function () { modSec(function (mod) { tumSorular(function (hepsi) { testBaslat("Karışık test", hepsi.slice(0, 20), mod); }); }); } }, "20 soruluk karışık test"));
 
       return [
         hero,
@@ -1004,12 +1016,93 @@
           }
         }, s[1]));
       });
+
+      // İsim
+      var isimKutu = h("input", { class: "alan", type: "text", maxlength: "30", placeholder: "İsteğe bağlı", "aria-label": "İsmin",
+        value: kayit.oku("yks-isim", "") });
+      isimKutu.addEventListener("input", function () { kayit.yaz("yks-isim", isimKutu.value.trim()); });
+
+      // Genel durum
+      var oturan = 0, toplam = 0, cozulen = 0, gun = 0;
+      Object.keys(ozetDurum).forEach(function (kid) { Object.keys(ozetDurum[kid]).forEach(function (m) { if (ozetDurum[kid][m] === "b") oturan++; }); });
+      Object.keys(toplamlar).forEach(function (kid) { toplam += toplamlar[kid]; });
+      Object.keys(gecmis).forEach(function (g) { cozulen += gecmis[g].c || 0; gun++; });
+      function sayiKutu(sayi, ad) { return h("div", { class: "sayi-kutu" }, h("b", null, String(sayi)), h("span", null, ad)); }
+      var durum = h("div", { class: "kart" },
+        h("h2", null, "Genel durum"),
+        h("div", { class: "sayilar" }, sayiKutu(oturan, "oturan bilgi"), sayiKutu(cozulen, "çözülen soru"), sayiKutu(gun, "çalışılan gün")),
+        cozulen || oturan ? null : h("p", { class: "alt" }, "Henüz başlamadın. Bir konuya girince burası dolacak."));
+
+      // Yedek
+      var dosya = h("input", { type: "file", accept: "application/json,.json", hidden: "" });
+      dosya.addEventListener("change", function () {
+        var f = dosya.files && dosya.files[0];
+        if (!f) return;
+        var r = new FileReader();
+        r.onload = function () {
+          try {
+            var veri = JSON.parse(r.result);
+            if (!veri || veri.tur !== "yks-yedek" || typeof veri.veri !== "object") throw new Error("bicim");
+            Object.keys(veri.veri).forEach(function (k) { if (k.indexOf("yks-") === 0) localStorage.setItem(k, veri.veri[k]); });
+            mesaj("Yedek yüklendi, sayfa yenileniyor…");
+            setTimeout(function () { location.href = "./"; }, 900);
+          } catch (e) { mesaj("Bu dosya bir YKS yedeği gibi görünmüyor."); }
+        };
+        r.readAsText(f);
+      });
+      function yedekAl() {
+        var veri = {};
+        try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf("yks-") === 0) veri[k] = localStorage.getItem(k); } } catch (e) {}
+        var govde = JSON.stringify({ tur: "yks-yedek", surum: SURUM, tarih: bugunAnahtar(), veri: veri });
+        var ad = "yks-yedek-" + bugunAnahtar() + ".json";
+        try {
+          var dosyaNesne = new File([govde], ad, { type: "application/json" });
+          if (navigator.canShare && navigator.canShare({ files: [dosyaNesne] })) {
+            navigator.share({ files: [dosyaNesne], title: "YKS yedeği" }).catch(function () {});
+            return;
+          }
+        } catch (e) {}
+        var a = h("a", { href: URL.createObjectURL(new Blob([govde], { type: "application/json" })), download: ad });
+        document.body.appendChild(a); a.click(); a.remove();
+        mesaj("Yedek indirildi 🌿");
+      }
+      var sifirlaDugme = h("button", { class: "dugme ikincil", type: "button" }, "Geçmişi sıfırla");
+      var sifirlaHazir = false;
+      sifirlaDugme.addEventListener("click", function () {
+        if (!sifirlaHazir) {
+          sifirlaHazir = true; sifirlaDugme.textContent = "Emin misin? Bir kez daha dokun";
+          setTimeout(function () { sifirlaHazir = false; sifirlaDugme.textContent = "Geçmişi sıfırla"; }, 4000);
+          return;
+        }
+        ["yks-ilerleme", "yks-ozet", "yks-testler", "yks-yarim", "yks-gecmis", "yks-toplam"].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+        mesaj("Geçmiş sıfırlandı."); setTimeout(function () { location.href = "./"; }, 800);
+      });
+      var veriler = h("div", { class: "kart" },
+        h("h2", null, "Verilerin"),
+        h("p", { class: "alt" }, "İlerlemen yalnızca bu telefonda durur; hesap yok. Tarayıcı verisini silmeden ya da telefon değiştirmeden önce yedek al, dosyayı kendine mesajla gönderebilirsin."),
+        h("div", { style: "margin-top:14px" },
+          h("button", { class: "dugme", type: "button", onclick: yedekAl }, "Yedek al"),
+          h("button", { class: "dugme ikincil", type: "button", onclick: function () { dosya.click(); } }, "Yedekten geri yükle"),
+          sifirlaDugme, dosya),
+        h("p", { class: "alt", style: "margin-top:12px" }, "Ana ekrana ekleyince uygulama gibi açılır: Safari'de Paylaş, sonra Ana Ekrana Ekle."));
+
+      var hakkinda = h("div", { class: "kart" },
+        h("h2", null, "Hakkında"),
+        h("p", { class: "alt" }, "Sorular ve bilgi kartları kaynaklardan okunarak yapay zekâ yardımıyla hazırlandı, hatalar olabilir. Bir soru sana yanlış geldiyse büyük ihtimalle haklısın: soru ekranındaki “Bu soruda bir sorun var” bağlantısı soruyu bulmaya yetecek bilgiyi kopyalar, onu bana iletmen yeterli."));
+
       return [
         h("header", { class: "ust" }, h("h1", null, "Profil")),
+        h("div", { class: "kart" },
+          h("h2", null, "İsmin"),
+          h("p", { class: "alt" }, "Ana sayfadaki selamlamada kullanılır; bu telefonda saklanır ve yedeğe girer."),
+          h("div", { style: "margin-top:12px" }, isimKutu)),
+        durum,
+        veriler,
         h("div", { class: "kart" },
           h("h2", null, "Görünüm"),
           h("p", { class: "alt" }, "Açık, koyu ya da telefonun ayarına göre."),
           h("div", { style: "margin-top:14px" }, grup)),
+        hakkinda,
         h("p", { class: "surum" }, "Sürüm " + SURUM)
       ];
     }
@@ -1037,7 +1130,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev28" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev29" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",

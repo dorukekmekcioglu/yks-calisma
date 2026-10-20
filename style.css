@@ -482,3 +482,10 @@ body.testte .sayfa { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* Profil */
+.alan { width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid var(--cizgi); border-radius: 12px; background: var(--yuzey-2); color: var(--yazi); font: inherit; font-size: 17px; }
+.alan:focus { outline: 2px solid var(--vurgu); outline-offset: 1px; }
+.sayilar { display: flex; gap: 10px; margin-top: 14px; }
+.sayilar .sayi-kutu { flex: 1; text-align: center; }
+.kucuk-baglanti { font-size: 13px; opacity: .8; }
