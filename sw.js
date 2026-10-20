@@ -1,12 +1,12 @@
 // Çevrimdışı çalışma ve güncelleme.
 // Her yayında SURUM değişir (app.js içindeki SURUM ile aynı olmalı): yeni sürüm kendi
 // önbelleğine indirilir, hazır olunca uygulama "Yeni sürüm hazır" bildirimi gösterir.
-var SURUM = "1.0-dev3";
+var SURUM = "1.0-dev5";
 var CACHE = "yks-calisma-" + SURUM;
 // Ders içerik dosyaları (data/*.js) ilk kullanımda önbelleğe girer; yeni içerik
 // dosyası eklenince buraya da yazmak çevrimdışı ilk açılışı garantiler.
 var KABUK = [
-  "./", "index.html", "style.css", "app.js", "config.js", "data/index.js", "data/biyoloji-ayt.js",
+  "./", "index.html", "style.css", "app.js", "config.js", "karakter.js", "data/index.js", "data/biyoloji-ayt.js",
   "manifest.json", "icon-192.png", "icon-512.png", "apple-touch-icon.png"
 ];
 

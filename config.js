@@ -13,7 +13,7 @@ var MOTIVASYON = [
   { metin: "(örnek not) Bugün küçük bir adım bile adımdır.", sevgili: false },
   { metin: "(örnek not) Dinlenmek de çalışmanın bir parçası. Su içmeyi unutma.", sevgili: false },
   { metin: "(örnek not) Yorulursan mola ver; mola vermek vazgeçmek değildir.", sevgili: false },
-  { metin: "(örnek not) Seninle gurur duyuyorum. 🤍", sevgili: true }
+  { metin: "(örnek not) Seninle gurur duyuyorum.", sevgili: true }
 ];
 
 // Test sonu aşk notları, başarı oranına göre 3 basamak.

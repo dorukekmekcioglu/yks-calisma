@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev3"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev5"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -56,8 +56,7 @@
     var n = motivasyonNotu();
     if (!n) return null;
     return h("div", { class: "kart not-kart" },
-      h("p", null, n.metin),
-      n.sevgili ? h("span", { class: "imza" }, "💗") : null);
+      h("p", null, n.metin, n.sevgili ? " 💗" : ""));
   }
 
   function yakinda(ikon, baslik, metin) {
@@ -737,29 +736,69 @@
     ana: function () {
       var bekleyen = bekleyenIdler().length;
       var yarim = kayit.oku("yks-yarim", null);
-      var bugun = h("div", { class: "kart bugun" },
-        h("h2", null, "Bugün"),
-        h("p", { class: "sayi" }, String(bekleyen), h("small", null, "madde seni bekliyor")),
-        h("p", { class: "alt" }, bekleyen
-          ? "Kısa bir turda hepsine göz atabilirsin."
-          : "Şimdilik tekrar bekleyen yok. İstersen yeni bir şeylere bakalım."),
-        yarim ? h("button", { class: "dugme", type: "button", onclick: yarimDevam },
-          "Kaldığın yerden devam et ", h("span", { class: "kucuk", style: "color:inherit;opacity:.8" }, "· " + yarim.i + "/" + yarim.liste.length)) : null,
-        h("button", { class: yarim ? "dugme ikincil" : "dugme", type: "button", onclick: function () {
-          modSec(function (mod) { tumSorular(function (hepsi) { testBaslat("Kısa bir tur", kisaTurSorulari(hepsi, 8), mod, true); }); });
-        } }, "Yeni bir kısa tur ", h("span", { class: "kucuk", style: "color:inherit;opacity:.8" }, "· 2-3 dk")));
+      var bugunC = (gecmis[bugunAnahtar()] || { c: 0 }).c;
 
+      // 1) selamlama + not
+      var gece = karakterGece();
+      var karakter = h("div", { class: "karakter " + (gece ? "gece" : "gunduz"), "aria-hidden": "true" });
+      karakter.innerHTML = karakterSvg(gece); // kendi çizdiğimiz SVG
+      var hero = h("section", { class: "hero" },
+        h("div", { class: "hero-ust" },
+          h("div", { class: "hero-yazi" },
+            h("p", { class: "selam" }, selam()),
+            h("h1", null, "Bugün biraz tekrar?")),
+          karakter),
+        notKarti());
+
+      // 2) ilerleme: üç sade sayı + yumuşak çubuk (kart sayısı ders dosyaları yüklenince dolar)
+      var cubukEl = h("i", { style: "width:0%" });
+      var cubukYazi = h("span", null, "");
+      var cubukKutu = h("div", { class: "ilerleme-alt", hidden: "" },
+        h("div", { class: "ilerleme-yazi" }, h("span", null, "Oturan kartlar"), cubukYazi),
+        h("div", { class: "cubuk", "aria-hidden": "true" }, cubukEl));
+      var ilerlemeKart = h("section", { class: "kart ilerleme-kart" },
+        h("h2", null, "İlerleme"),
+        h("div", { class: "sayilar" },
+          h("div", { class: "sayi-kutu" }, h("b", null, String(bugunC)), h("span", null, "bugün çözülen soru")),
+          h("div", { class: "sayi-kutu" }, h("b", null, String(bekleyen)), h("span", null, "tekrarı bekleyen"))),
+        cubukKutu);
+      function ilerlemeDoldur() {
+        var oturan = 0;
+        Object.keys(ozetDurum).forEach(function (kid) {
+          Object.keys(ozetDurum[kid]).forEach(function (m) { if (ozetDurum[kid][m] === "b") oturan++; });
+        });
+        var toplam = 0;
+        Object.keys(toplamlar).forEach(function (kid) { toplam += toplamlar[kid]; });
+        if (toplam) {
+          cubukKutu.hidden = false;
+          cubukYazi.textContent = oturan + " / " + toplam;
+          cubukEl.style.width = Math.min(100, Math.round(oturan / toplam * 100)) + "%";
+        }
+      }
+      ilerlemeDoldur();
+      var dosyalar = [];
+      KONULAR.forEach(function (k) { if (k.hazir && dosyalar.indexOf(k.dosya) < 0) dosyalar.push(k.dosya); });
+      Promise.all(dosyalar.map(dersYukle)).then(ilerlemeDoldur);
+
+      // 3) kısa tur
+      var tur = h("section", { class: "tur" },
+        yarim ? h("button", { class: "dugme buyuk", type: "button", onclick: yarimDevam },
+          "Kaldığın yerden devam et ", h("span", { class: "kucuk", style: "color:inherit;opacity:.85" }, "· " + yarim.i + "/" + yarim.liste.length)) : null,
+        h("button", { class: yarim ? "dugme buyuk ikincil" : "dugme buyuk", type: "button", onclick: function () {
+          modSec(function (mod) { tumSorular(function (hepsi) { testBaslat("Kısa bir tur", kisaTurSorulari(hepsi, 8), mod, true); }); });
+        } }, yarim ? "Yeni bir kısa tur" : "Kısa bir tura başla"),
+        h("p", { class: "tur-alt" }, "2-3 dakika · önce tekrarı gelenler"));
+
+      // 4) daha fazlası
       var hizli = h("div", { class: "hizli" },
-        h("button", { class: "dugme", type: "button", onclick: function () { modSec(function (mod) { tumSorular(function (hepsi) { testBaslat("Karışık test", hepsi.slice(0, 20), mod); }); }); } }, "20 soruluk karışık test"),
+        h("button", { class: "dugme ikincil", type: "button", onclick: function () { modSec(function (mod) { tumSorular(function (hepsi) { testBaslat("Karışık test", hepsi.slice(0, 20), mod); }); }); } }, "20 soruluk karışık test"),
         h("button", { class: "dugme ikincil", type: "button", onclick: function () { mesaj("Özelleştirme birazdan hazır 🌿"); } }, "Özelleştir"));
 
       return [
-        h("header", { class: "ust" },
-          h("p", { class: "selam" }, selam()),
-          h("h1", null, "Bugün biraz tekrar?")),
-        bugun,
+        hero,
+        ilerlemeKart,
+        tur,
         hizli,
-        h("div", { style: "margin-top:12px" }, notKarti()),
         h("h2", { class: "bolum-baslik" }, "Dersler"),
         dersListesi()
       ];
@@ -868,11 +907,11 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev3" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev5" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",
-      "Konulara göre özet, çalış ve tekrar sayfaları",
+      "Konulara göre özet kartları, testler ve tekrar: kartları sağa-sola kaydır",
       "Anlık geri bildirimli ya da sonda sonuçlu testler",
       "Unutmadan tekrar: öğrendiklerin doğru zamanda karşına çıkar"
     ]
