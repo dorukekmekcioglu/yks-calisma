@@ -41,6 +41,15 @@ var KONULAR = [
   _k("tyt", "kimya", "her-yerde", "Kimya Her Yerde"),
   _k("tyt", "kimya", "doga", "Doğa ve Kimya"),
 
+  // TYT Biyoloji (kaynak: OGM Materyal TYT-AYT ve kullanıcının el yazısı notları)
+  _k("tyt", "biyoloji", "giris", "Biyolojiye Giriş ve Canlıların Ortak Özellikleri", true),
+  _k("tyt", "biyoloji", "bilesen", "Canlıların Temel Bileşenleri", true),
+  _k("tyt", "biyoloji", "hucre", "Hücre", true),
+  _k("tyt", "biyoloji", "bolunme", "Hücre Bölünmeleri ve Üreme", true),
+  _k("tyt", "biyoloji", "canlilar", "Canlılar Dünyası ve Sınıflandırma", true),
+  _k("tyt", "biyoloji", "ekoloji", "Ekosistem Ekolojisi", true),
+  _k("tyt", "biyoloji", "kalitim", "Kalıtım", true),
+
   _k("tyt", "sosyal", "harita", "Harita Bilgisi"),
   _k("tyt", "sosyal", "dunya", "Dünya'nın Şekli ve Hareketleri"),
   _k("tyt", "sosyal", "konum", "Coğrafi Konum"),
