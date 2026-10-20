@@ -71,11 +71,15 @@ var KONULAR = [
   _k("tyt", "sosyal", "harita", "Harita Bilgisi", true),
 
   // TYT Türkçe: yazım kuralları (kaynak: kullanıcının Suat Toker notları)
+  _k("tyt", "turkce", "ses", "Ses Bilgisi", true),
   _k("tyt", "turkce", "buyuk-harf", "Büyük Harflerin Kullanımı", true),
   _k("tyt", "turkce", "sayi-ikileme", "Sayıların ve İkilemelerin Yazımı", true),
   _k("tyt", "turkce", "ayri-birlesik", "Ayrı Yazılan Birleşik Kelimeler", true),
   _k("tyt", "turkce", "bitisik-birlesik", "Bitişik Yazılan Birleşik Kelimeler", true),
   _k("tyt", "turkce", "mi-ki-kisaltma", "mi, ki, de ve Kısaltmaların Yazımı", true),
+  _k("tyt", "turkce", "noktalama-1", "Noktalama 1: Nokta, Virgül, Noktalı Virgül", true),
+  _k("tyt", "turkce", "noktalama-2", "Noktalama 2: İki Nokta, Üç Nokta, Soru ve Ünlem", true),
+  _k("tyt", "turkce", "noktalama-3", "Noktalama 3: Çizgiler, Tırnak, Ayraç, Kesme", true),
 
   _k("ayt", "biyoloji", "sinir", "Sinir Sistemi", true),
   _k("ayt", "biyoloji", "endokrin", "Endokrin Sistem", true)
