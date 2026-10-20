@@ -80,6 +80,13 @@ var KONULAR = [
   _k("tyt", "turkce", "noktalama-1", "Noktalama 1: Nokta, Virgül, Noktalı Virgül", true),
   _k("tyt", "turkce", "noktalama-2", "Noktalama 2: İki Nokta, Üç Nokta, Soru ve Ünlem", true),
   _k("tyt", "turkce", "noktalama-3", "Noktalama 3: Çizgiler, Tırnak, Ayraç, Kesme", true),
+  _k("tyt", "turkce", "bicim", "Kök, Ekler ve Sözcüğün Yapısı", true),
+  _k("tyt", "turkce", "isim", "İsim (Ad)", true),
+  _k("tyt", "turkce", "sifat", "Sıfat (Ön Ad)", true),
+  _k("tyt", "turkce", "zamir", "Zamir (Adıl)", true),
+  _k("tyt", "turkce", "tamlama", "İsim ve Sıfat Tamlamaları", true),
+  _k("tyt", "turkce", "zarf", "Zarf (Belirteç)", true),
+  _k("tyt", "turkce", "edat-baglac-unlem", "Edat, Bağlaç, Ünlem", true),
 
   _k("ayt", "biyoloji", "sinir", "Sinir Sistemi", true),
   _k("ayt", "biyoloji", "endokrin", "Endokrin Sistem", true)
