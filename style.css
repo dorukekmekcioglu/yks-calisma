@@ -258,6 +258,10 @@ body.testte .guncelleme { bottom: calc(16px + env(safe-area-inset-bottom)); }
 .yenilik-liste { margin: 0 0 16px; padding-left: 20px; }
 .yenilik-liste li + li { margin-top: 8px; }
 
+/* soru görseli (harita) */
+.soru-gorsel { margin: 14px 0 4px; }
+.soru-gorsel svg { width: 100%; height: auto; display: block; border-radius: 12px; }
+
 /* konu testleri listesi */
 .test-liste { display: grid; gap: 10px; }
 .test-satir {

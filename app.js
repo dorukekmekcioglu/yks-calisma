@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev15"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev16"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -125,6 +125,69 @@
         h("span", { class: "ad" }, k.ad, rozetVarMi(k.id) ? h("span", { class: "rozet", title: "Bu konuda ustalaştın" }, "🏅") : null),
         k.hazir ? null : h("span", { class: "hazirlaniyor" }, "hazırlanıyor")),
       h("div", { class: "cubuk", "aria-hidden": "true" }, h("i", { style: "width:" + yuzde + "%" })));
+  }
+
+  /* ---------- soru görselleri: harita (Türkiye, dünya), işaretli noktalar, ızgara ---------- */
+  var haritaSozu = null;
+  function haritaYukle() {
+    if (window.HARITALAR) return Promise.resolve();
+    if (!haritaSozu) {
+      haritaSozu = new Promise(function (coz) {
+        var el = document.createElement("script");
+        el.src = "data/harita.js";
+        el.onload = el.onerror = function () { coz(); };
+        document.head.appendChild(el);
+      });
+    }
+    return haritaSozu;
+  }
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function svgEl(ad, ozellik, metin) {
+    var e = document.createElementNS(SVGNS, ad);
+    Object.keys(ozellik || {}).forEach(function (k) { e.setAttribute(k, ozellik[k]); });
+    if (metin != null) e.textContent = metin;
+    return e;
+  }
+  // g: { harita: "turkiye"|"dunya", izgara: { paralel: [..], meridyen: [..] }, noktalar: [{ e: "K", lon, lat }],
+  //      cizgiler: [{ nokta: [[lon,lat],..], ad }] }
+  function haritaCiz(g) {
+    var hr = window.HARITALAR && window.HARITALAR[g.harita];
+    if (!hr) return null;
+    var X = function (lon) { return (lon - hr.lon0) * hr.sx; };
+    var Y = function (lat) { return (hr.lat0 - lat) * hr.sy; };
+    var sv = svgEl("svg", { viewBox: "0 0 " + hr.w + " " + hr.h, role: "img", "aria-label": "Harita" });
+    sv.appendChild(svgEl("rect", { width: hr.w, height: hr.h, rx: 12, fill: "var(--yuzey-2)" }));
+    if (hr.komsu) sv.appendChild(svgEl("path", { d: hr.komsu, fill: "var(--cizgi)", stroke: "var(--yuzey)", "stroke-width": ".8" }));
+    sv.appendChild(svgEl("path", { d: hr.yol, fill: g.harita === "turkiye" ? "var(--vurgu-acik)" : "var(--cizgi)", stroke: g.harita === "turkiye" ? "var(--vurgu)" : "var(--soluk)", "stroke-width": g.harita === "turkiye" ? "1.4" : ".5", "stroke-linejoin": "round" }));
+    var iz = g.izgara || {};
+    (iz.paralel || []).forEach(function (la) {
+      sv.appendChild(svgEl("line", { x1: 0, x2: hr.w, y1: Y(la), y2: Y(la), stroke: "var(--soluk)", "stroke-width": ".8", "stroke-dasharray": "4 4", opacity: ".7" }));
+      sv.appendChild(svgEl("text", { x: 6, y: Y(la) - 4, "font-size": "13", fill: "var(--soluk)" }, Math.abs(la) + "°" + (la < 0 ? "G" : la > 0 ? "K" : "")));
+    });
+    (iz.meridyen || []).forEach(function (lo) {
+      sv.appendChild(svgEl("line", { x1: X(lo), x2: X(lo), y1: 0, y2: hr.h, stroke: "var(--soluk)", "stroke-width": ".8", "stroke-dasharray": "4 4", opacity: ".7" }));
+      sv.appendChild(svgEl("text", { x: X(lo) + 3, y: hr.h - 6, "font-size": "13", fill: "var(--soluk)" }, Math.abs(lo) + "°" + (lo < 0 ? "B" : lo > 0 ? "D" : "")));
+    });
+    (g.cizgiler || []).forEach(function (c) {
+      var d = c.nokta.map(function (p, i) { return (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1); }).join("");
+      sv.appendChild(svgEl("path", { d: d, fill: "none", stroke: "var(--tekrar)", "stroke-width": "3", "stroke-linecap": "round", "stroke-linejoin": "round" }));
+    });
+    (g.noktalar || []).forEach(function (n) {
+      var x = X(n.lon), y = Y(n.lat);
+      sv.appendChild(svgEl("circle", { cx: x, cy: y, r: 11, fill: "var(--vurgu)", stroke: "var(--yuzey)", "stroke-width": "2" }));
+      sv.appendChild(svgEl("text", { x: x, y: y + 5, "font-size": "14", "font-weight": "700", "text-anchor": "middle", fill: "var(--vurgu-yazi)" }, n.e));
+    });
+    return sv;
+  }
+  function gorselKutu(q) {
+    if (!q.gorsel) return null;
+    var kutu = h("div", { class: "soru-gorsel" });
+    if (q.gorsel.svg) { kutu.innerHTML = q.gorsel.svg; return kutu; } // yalnızca kendi çizdiğimiz SVG
+    haritaYukle().then(function () {
+      var sv = haritaCiz(q.gorsel);
+      if (sv) kutu.appendChild(sv);
+    });
+    return kutu;
   }
 
   /* ---------- Leitner ve yerel ilerleme ---------- */
@@ -411,7 +474,8 @@
         kap.appendChild(h("div", { class: "soru-alani" },
           h("p", { class: "kucuk" }, "Mini soru · az önce okuduklarından"),
           h("p", { class: "soru-metin" }, q.soru),
-          q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, o); })) : null));
+          q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, o); })) : null,
+          gorselKutu(q)));
         var alt = h("div", { class: "alt-alan" });
         if (cevaplandi) {
           var dogruMu = kart.secim === s.dogruYeri;
@@ -630,7 +694,8 @@
 
       var soru = h("div", { class: "soru-alani" },
         h("p", { class: "soru-metin" }, q.soru),
-        q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, o); })) : null);
+        q.oncul ? h("ul", { class: "oncul" }, q.oncul.map(function (o) { return h("li", null, o); })) : null,
+        gorselKutu(q));
 
       var secenekler = h("div", { class: "secenekler" }, s.sira.map(function (orj, poz) {
         var sinif = "secenek";
@@ -908,7 +973,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev15" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev16" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",
