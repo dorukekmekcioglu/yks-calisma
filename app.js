@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev30"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev31"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -888,6 +888,92 @@
     kap.appendChild(dugmeler);
   }
 
+  /* ---------- Mola: başkent bul ---------- */
+  function molaMenu(kap) {
+    kap.replaceChildren();
+    var kita = kayit.oku("yks-mola-kita", "hepsi");
+    var kitaGrup = h("div", { class: "etiketler" });
+    function kitaCiz() {
+      kitaGrup.replaceChildren();
+      (window.MOLA_KITALAR || []).forEach(function (x) {
+        kitaGrup.appendChild(h("button", { class: "etiket secilebilir", type: "button", "aria-pressed": String(kita === x[0]),
+          onclick: function () { kita = x[0]; kayit.yaz("yks-mola-kita", kita); kitaCiz(); } }, x[1]));
+      });
+    }
+    kitaCiz();
+    function oyunKart(ikon, baslik, alt, yon) {
+      return h("button", { class: "oyun-kart", type: "button", onclick: function () { molaTur(kap, yon, kita); } },
+        h("span", { class: "oyun-ikon", "aria-hidden": "true" }, ikon),
+        h("span", { class: "oyun-metin" }, h("b", null, baslik), h("small", null, alt)));
+    }
+    kap.appendChild(h("p", { class: "kucuk", style: "margin:0 4px 14px" }, "Dersten bağımsız, rahat bir köşe. Süre yok, puan yok; tur bitince nerede olduğuna bakarız."));
+    kap.appendChild(h("h2", { class: "bolum-baslik" }, "Bölge seç"));
+    kap.appendChild(kitaGrup);
+    kap.appendChild(h("h2", { class: "bolum-baslik" }, "Oyunlar"));
+    kap.appendChild(oyunKart("🏛️", "Başkent bul", "Ülkenin başkentini seç", "ub"));
+    kap.appendChild(oyunKart("🌍", "Hangi ülke?", "Başkentin hangi ülkenin olduğunu seç", "bu"));
+    kap.appendChild(h("p", { class: "kucuk", style: "margin:14px 4px 0" }, "Haritada ülke bulma ve Türkiye illeri de yakında."));
+  }
+
+  function molaTur(kap, yon, kita) {
+    var tum = (window.MOLA_ULKELER || []);
+    var havuz = tum.filter(function (u) { return kita === "hepsi" || u[2] === kita; });
+    if (havuz.length < 5) havuz = tum;
+    var N = Math.min(10, havuz.length);
+    var sorular = karistir(havuz).slice(0, N).map(function (u) {
+      var yanit = yon === "ub" ? u[1] : u[0];
+      var digerleri = karistir(havuz.filter(function (x) { return x !== u && (yon === "ub" ? x[1] : x[0]) !== yanit; })).slice(0, 4)
+        .map(function (x) { return yon === "ub" ? x[1] : x[0]; });
+      var sec = karistir([yanit].concat(digerleri));
+      return { u: u, yanit: yanit, sec: sec, soru: yon === "ub" ? u[0] + " ülkesinin başkenti neresidir?" : u[1] + " hangi ülkenin başkentidir?" };
+    });
+    var i = 0, dogru = 0, kacan = [];
+    function ciz() {
+      kap.replaceChildren();
+      if (i >= N) { sonuc(); return; }
+      var s = sorular[i], secildi = null;
+      var secenekKutu = h("div", { class: "secenekler" });
+      var geri = h("div", { class: "geri-yer" });
+      var devam = h("button", { class: "dugme", type: "button", hidden: "", onclick: function () { i++; ciz(); } }, i === N - 1 ? "Bitir" : "Devam");
+      s.sec.forEach(function (m, p) {
+        var b = h("button", { class: "secenek", type: "button", onclick: function () {
+          if (secildi !== null) return;
+          secildi = p; titret(m === s.yanit ? 12 : 25);
+          Array.prototype.forEach.call(secenekKutu.children, function (bb, q) {
+            bb.disabled = true;
+            if (s.sec[q] === s.yanit) bb.classList.add("dogru");
+            else if (q === p) bb.classList.add("tekrar");
+          });
+          if (m === s.yanit) { dogru++; geri.textContent = "Güzel 🌿"; }
+          else { kacan.push(s); geri.textContent = "Doğrusu: " + s.yanit; }
+          devam.hidden = false;
+        } }, h("span", { class: "harf", "aria-hidden": "true" }, HARFLER[p]), h("span", { class: "metin" }, m));
+        secenekKutu.appendChild(b);
+      });
+      kap.appendChild(h("div", { class: "mola-ust" },
+        h("button", { class: "kapat", type: "button", "aria-label": "Molaya dön", onclick: function () { molaMenu(kap); } }, "✕"),
+        h("span", { class: "kucuk" }, (i + 1) + " / " + N)));
+      kap.appendChild(h("div", { class: "kart mola-soru" }, h("p", { class: "soru-metin" }, s.soru)));
+      kap.appendChild(secenekKutu);
+      kap.appendChild(geri);
+      kap.appendChild(devam);
+    }
+    function sonuc() {
+      kap.replaceChildren();
+      kap.appendChild(h("div", { class: "kart" },
+        h("h2", null, N + " sorudan " + dogru + "'i oturdu"),
+        h("p", { class: "alt" }, kacan.length ? "Şunlara bir daha göz atalım:" : "Hepsi yerli yerinde, harika 🌿")));
+      if (kacan.length) {
+        kap.appendChild(h("div", { class: "kart" }, kacan.map(function (s) {
+          return h("p", { class: "kacan" }, h("b", null, s.u[0]), " → ", s.u[1]);
+        })));
+      }
+      kap.appendChild(h("button", { class: "dugme", type: "button", onclick: function () { molaTur(kap, yon, kita); } }, "Bir tur daha"));
+      kap.appendChild(h("button", { class: "dugme ikincil", type: "button", onclick: function () { molaMenu(kap); } }, "Mola menüsü"));
+    }
+    ciz();
+  }
+
   /* ---------- Gözden Geçir ---------- */
   function halka(yuzde, boyut, kalinlik, ic) {
     var r = (boyut - kalinlik) / 2, c = 2 * Math.PI * r;
@@ -1094,11 +1180,16 @@
       return testGorunum();
     },
     mola: function () {
-      return [
-        h("header", { class: "ust" }, h("h1", null, "Mola")),
-        yakinda("☕", "Kafa dağıtma köşesi",
-          "Başkentler, haritada ülke bulma ve Türkiye illeri buraya gelecek.")
-      ];
+      var kap = h("div", { class: "mola-kap" });
+      var yuk = new Promise(function (coz) {
+        if (window.MOLA_ULKELER) return coz();
+        var el = document.createElement("script");
+        el.src = "data/mola.js";
+        el.onload = el.onerror = function () { coz(); };
+        document.head.appendChild(el);
+      });
+      yuk.then(function () { molaMenu(kap); });
+      return [h("header", { class: "ust" }, h("h1", null, "Mola")), kap];
     },
     "gozden-gecir": function () {
       var govde = h("div", null, h("p", { class: "kucuk" }, "Yükleniyor…"));
@@ -1241,7 +1332,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev30" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev31" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",

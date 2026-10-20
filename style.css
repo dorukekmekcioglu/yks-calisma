@@ -509,3 +509,19 @@ body.testte .sayfa { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 .hafta-cubuk { width: 100%; max-width: 26px; align-self: stretch; background: var(--yuzey-2); border-radius: 8px; display: flex; align-items: flex-end; overflow: hidden; }
 .hafta-cubuk i { width: 100%; background: var(--iyi); border-radius: 8px; min-height: 0; }
 .hafta-gun span { font-size: 12px; color: var(--soluk); }
+
+/* Mola */
+.etiketler { display: flex; flex-wrap: wrap; gap: 8px; }
+.etiket.secilebilir { border: 1px solid transparent; cursor: pointer; font: inherit; font-size: 14px; }
+.etiket.secilebilir[aria-pressed="true"] { background: var(--vurgu-acik); border-color: var(--vurgu); color: var(--yazi); font-weight: 650; }
+.oyun-kart { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px; margin-bottom: 10px; text-align: left; font: inherit; color: var(--yazi); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yuvarlak, 18px); box-shadow: var(--golge); cursor: pointer; }
+.oyun-kart:active { transform: scale(.985); }
+.oyun-ikon { font-size: 30px; }
+.oyun-metin { display: grid; gap: 2px; }
+.oyun-metin b { font-size: 18px; }
+.oyun-metin small { font-size: 14px; color: var(--soluk); }
+.mola-ust { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.mola-soru { text-align: center; padding: 26px 18px; margin-bottom: 14px; }
+.mola-soru .soru-metin { font-size: 21px; font-weight: 650; }
+.geri-yer { min-height: 28px; text-align: center; font-weight: 600; margin: 2px 0 10px; }
+.kacan { margin: 6px 0; }
