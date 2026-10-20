@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.0-dev29"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.0-dev30"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
@@ -309,6 +309,20 @@
       if (r.n === konuId && (r.k >= 4 || r.kalici)) n++;
     });
     return Math.min(100, Math.round(n / tp * 100));
+  }
+  // "Oturan" bilgi: özette "Yess!" denen ya da testlerde tekrar tekrar doğru yapılan maddeler.
+  function oturanSay(konuId) {
+    var kume = {};
+    Object.keys(ozetDurum).forEach(function (kid) {
+      if (konuId && kid !== konuId) return;
+      Object.keys(ozetDurum[kid]).forEach(function (m) { if (ozetDurum[kid][m] === "b") kume[m] = 1; });
+    });
+    Object.keys(ilerleme).forEach(function (id) {
+      var r = ilerleme[id];
+      if (konuId && r.n !== konuId) return;
+      if (!r.t && (r.k >= 3 || r.kalici)) kume[id] = 1;
+    });
+    return Object.keys(kume).length;
   }
   function rozetVarMi(konuId) { return konuYuzde(konuId) >= 80; }
 
@@ -874,6 +888,101 @@
     kap.appendChild(dugmeler);
   }
 
+  /* ---------- Gözden Geçir ---------- */
+  function halka(yuzde, boyut, kalinlik, ic) {
+    var r = (boyut - kalinlik) / 2, c = 2 * Math.PI * r;
+    var sv = svgEl("svg", { viewBox: "0 0 " + boyut + " " + boyut, class: "halka", role: "img", "aria-label": "%" + yuzde });
+    sv.appendChild(svgEl("circle", { cx: boyut / 2, cy: boyut / 2, r: r, fill: "none", stroke: "var(--yuzey-2)", "stroke-width": kalinlik }));
+    sv.appendChild(svgEl("circle", { cx: boyut / 2, cy: boyut / 2, r: r, fill: "none", stroke: "var(--iyi)", "stroke-width": kalinlik,
+      "stroke-linecap": "round", "stroke-dasharray": (c * yuzde / 100).toFixed(1) + " " + c.toFixed(1), transform: "rotate(-90 " + boyut / 2 + " " + boyut / 2 + ")" }));
+    var kap = h("div", { class: "halka-kap", style: "width:" + boyut + "px;height:" + boyut + "px" }, sv, h("div", { class: "halka-ic" }, ic));
+    return kap;
+  }
+
+  function gozdenGecirIcerik(hepsi) {
+    var cikti = [];
+    var toplam = 0;
+    Object.keys(toplamlar).forEach(function (kid) { toplam += toplamlar[kid]; });
+    var oturan = oturanSay();
+    var yuzde = toplam ? Math.min(100, Math.round(oturan / toplam * 100)) : 0;
+
+    // 1) genel halka + ders halkaları
+    var dersHalkalari = h("div", { class: "ders-halkalar" });
+    DERSLER.forEach(function (d) {
+      var konular = KONULAR.filter(function (k) { return k.ders === d.id && k.sinav === d.sinav && k.hazir; });
+      var tp = 0, ot = 0;
+      konular.forEach(function (k) { tp += toplamlar[k.id] || 0; ot += oturanSay(k.id); });
+      if (!tp) return;
+      var y = Math.min(100, Math.round(ot / tp * 100));
+      dersHalkalari.appendChild(h("div", { class: "ders-halka" },
+        halka(y, 64, 7, h("b", null, y + "%")),
+        h("span", null, d.ad + (d.sinav === "ayt" ? " (AYT)" : ""))));
+    });
+    cikti.push(h("section", { class: "kart halka-kart" },
+      halka(yuzde, 168, 14, [h("b", null, "%" + yuzde), h("span", null, "oturdu")]),
+      h("p", { class: "alt halka-alt" }, toplam ? oturan + " / " + toplam + " bilgi oturdu" : "Bir konuya girince burası dolacak."),
+      dersHalkalari.children.length ? dersHalkalari : null));
+
+    // 2) tekrarı gelenler
+    var idler = bekleyenIdler();
+    var konuAd = {};
+    KONULAR.forEach(function (k) { konuAd[k.id] = k.ad; });
+    var konuSay = {};
+    idler.forEach(function (id) { var n = ilerleme[id].n; konuSay[n] = (konuSay[n] || 0) + 1; });
+    var tekrarSorular = [];
+    idler.forEach(function (id) {
+      var q = hepsi.filter(function (x) { return ogeIdleri(x).indexOf(id) >= 0; })[0];
+      if (q && tekrarSorular.indexOf(q) < 0) tekrarSorular.push(q);
+    });
+    cikti.push(h("h2", { class: "bolum-baslik" }, "Tekrar edeceklerim"));
+    if (!idler.length) {
+      cikti.push(yakinda("🌤️", "Şimdilik tekrar bekleyen yok", "Öğrendiklerin tekrar zamanı gelince burada görünecek."));
+    } else {
+      cikti.push(h("div", { class: "kart" },
+        h("h2", null, idler.length + " madde seni bekliyor"),
+        h("div", { class: "konu-etiketler" }, Object.keys(konuSay).map(function (n) {
+          return h("a", { class: "etiket", href: "#/konu/" + n + "/tekrar" }, (konuAd[n] || n) + " · " + konuSay[n]);
+        })),
+        h("button", { class: "dugme", type: "button", style: "margin-top:14px",
+          onclick: function () { modSec(function (mod) { testBaslat("Tekrar zamanı", tekrarSorular.slice(0, 20), mod); }); } }, "Hepsini tazele")));
+    }
+
+    // 3) biraz ilgi bekleyenler: başlanmış ama en az oturan konular
+    var adaylar = KONULAR.filter(function (k) { return k.hazir && toplamlar[k.id] && (oturanSay(k.id) || Object.keys(ilerleme).some(function (id) { return ilerleme[id].n === k.id; })); })
+      .map(function (k) { return { k: k, y: Math.min(100, Math.round(oturanSay(k.id) / toplamlar[k.id] * 100)) }; })
+      .filter(function (a) { return a.y < 80; })
+      .sort(function (a, b) { return a.y - b.y; }).slice(0, 5);
+    if (adaylar.length) {
+      cikti.push(h("h2", { class: "bolum-baslik" }, "Biraz ilgi bekleyenler"));
+      cikti.push(h("div", { class: "test-liste" }, adaylar.map(function (a) {
+        return h("a", { class: "test-satir", href: "#/konu/" + a.k.id + "/ozet" },
+          h("span", { class: "bilgi" }, h("b", null, a.k.ad), h("small", null, "%" + a.y + " oturdu")),
+          h("span", { class: "tik", "aria-hidden": "true" }, "›"));
+      })));
+    }
+
+    // 4) bu hafta
+    var gunAd = ["Pz", "Pt", "Sa", "Ça", "Pe", "Cu", "Ct"];
+    var cubuklar = h("div", { class: "hafta" }), hs = 0, hg = 0, enCok = 1, gunler = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(); d.setDate(d.getDate() - i);
+      var an = d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+      var c = (gecmis[an] && gecmis[an].c) || 0;
+      gunler.push({ ad: gunAd[d.getDay()], c: c });
+      hs += c; if (c) hg++; if (c > enCok) enCok = c;
+    }
+    gunler.forEach(function (g) {
+      cubuklar.appendChild(h("div", { class: "hafta-gun" },
+        h("div", { class: "hafta-cubuk" }, h("i", { style: "height:" + Math.round(g.c / enCok * 100) + "%" })),
+        h("span", null, g.ad)));
+    });
+    cikti.push(h("h2", { class: "bolum-baslik" }, "Bu hafta"));
+    cikti.push(h("div", { class: "kart" },
+      h("p", { class: "alt", style: "margin:0 0 12px" }, hs ? hs + " soru çözdün, " + hg + " gün çalıştın." : "Bu hafta henüz soru çözmedin, acelesi yok 🌿"),
+      cubuklar));
+    return cikti;
+  }
+
   /* ---------- sayfalar ---------- */
   var sayfalar = {
     ana: function () {
@@ -906,10 +1015,7 @@
           h("div", { class: "sayi-kutu" }, h("b", null, String(bekleyen)), h("span", null, "tekrarı bekleyen"))),
         cubukKutu);
       function ilerlemeDoldur() {
-        var oturan = 0;
-        Object.keys(ozetDurum).forEach(function (kid) {
-          Object.keys(ozetDurum[kid]).forEach(function (m) { if (ozetDurum[kid][m] === "b") oturan++; });
-        });
+        var oturan = oturanSay();
         var toplam = 0;
         Object.keys(toplamlar).forEach(function (kid) { toplam += toplamlar[kid]; });
         if (toplam) {
@@ -995,11 +1101,16 @@
       ];
     },
     "gozden-gecir": function () {
-      return [
-        h("header", { class: "ust" }, h("h1", null, "Gözden Geçir")),
-        yakinda("📒", "Tekrar edeceklerim ve favoriler",
-          "Tekrar listesi, favoriler ve sade istatistikler buraya gelecek.")
-      ];
+      var govde = h("div", null, h("p", { class: "kucuk" }, "Yükleniyor…"));
+      var dosyalar = [];
+      KONULAR.forEach(function (k) { if (k.hazir && dosyalar.indexOf(k.dosya) < 0) dosyalar.push(k.dosya); });
+      Promise.all(dosyalar.map(dersYukle)).then(function (veriler) {
+        var hepsi = [];
+        veriler.forEach(function (v) { hepsi = hepsi.concat(v.sorular); });
+        govde.replaceChildren();
+        ekle(govde, gozdenGecirIcerik(hepsi));
+      });
+      return [h("header", { class: "ust" }, h("h1", null, "Gözden Geçir")), govde];
     },
     profil: function () {
       var secili = kayit.oku("yks-tema", "sistem");
@@ -1130,7 +1241,7 @@
   rota();
 
   /* ---------- güncelleme: "Yeni sürüm hazır" ve "Yenilikler" ---------- */
-  // Anahtar: sürümün ana numarası ("1.0-dev29" için "1.0"). Her yayında buraya madde eklenir.
+  // Anahtar: sürümün ana numarası ("1.0-dev30" için "1.0"). Her yayında buraya madde eklenir.
   var YENILIKLER = {
     "1.0": [
       "Yepyeni, sade ve sıcak bir görünüm",

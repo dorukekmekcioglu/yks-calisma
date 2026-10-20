@@ -1,7 +1,7 @@
 // Çevrimdışı çalışma ve güncelleme.
 // Her yayında SURUM değişir (app.js içindeki SURUM ile aynı olmalı): yeni sürüm kendi
 // önbelleğine indirilir, hazır olunca uygulama "Yeni sürüm hazır" bildirimi gösterir.
-var SURUM = "1.0-dev29";
+var SURUM = "1.0-dev30";
 var CACHE = "yks-calisma-" + SURUM;
 // Ders içerik dosyaları (data/*.js) ilk kullanımda önbelleğe girer; yeni içerik
 // dosyası eklenince buraya da yazmak çevrimdışı ilk açılışı garantiler.

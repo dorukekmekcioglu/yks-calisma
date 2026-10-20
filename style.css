@@ -489,3 +489,23 @@ body.testte .sayfa { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 .sayilar { display: flex; gap: 10px; margin-top: 14px; }
 .sayilar .sayi-kutu { flex: 1; text-align: center; }
 .kucuk-baglanti { font-size: 13px; opacity: .8; }
+
+/* Gözden Geçir */
+.halka-kart { text-align: center; }
+.halka-kap { position: relative; margin: 6px auto 0; }
+.halka { width: 100%; height: 100%; display: block; }
+.halka-ic { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.halka-ic b { font-size: 34px; font-weight: 700; color: var(--yazi); letter-spacing: -.02em; line-height: 1.1; }
+.halka-ic span { font-size: 14px; color: var(--soluk); }
+.halka-alt { margin-top: 10px; }
+.ders-halkalar { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 18px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--cizgi); }
+.ders-halka { display: grid; justify-items: center; gap: 6px; width: 84px; }
+.ders-halka .halka-ic b { font-size: 15px; }
+.ders-halka span { font-size: 13px; color: var(--soluk); text-align: center; line-height: 1.25; }
+.konu-etiketler { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.etiket { padding: 8px 12px; border-radius: 99px; background: var(--yuzey-2); color: var(--yazi); font-size: 14px; text-decoration: none; }
+.hafta { display: flex; gap: 8px; align-items: flex-end; height: 96px; }
+.hafta-gun { flex: 1; display: grid; justify-items: center; gap: 6px; height: 100%; grid-template-rows: 1fr auto; }
+.hafta-cubuk { width: 100%; max-width: 26px; align-self: stretch; background: var(--yuzey-2); border-radius: 8px; display: flex; align-items: flex-end; overflow: hidden; }
+.hafta-cubuk i { width: 100%; background: var(--iyi); border-radius: 8px; min-height: 0; }
+.hafta-gun span { font-size: 12px; color: var(--soluk); }
