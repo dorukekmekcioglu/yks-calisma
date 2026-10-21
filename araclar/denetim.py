@@ -268,6 +268,11 @@ def denetle(ders, veri):
             bagli_madde.add(mid)
         if not q.get("maddeler"):
             hatalar.append((k, "hiçbir maddeye bağlı değil"))
+        if q.get("oncul"):
+            for i, o in enumerate(q["oncul"]):
+                if not re.match(r"^(I|II|III|IV|V)\. ", str(o)):
+                    hatalar.append((k, f"öncül numarasız: {str(o)[:30]!r} (\"I. \", \"II. \" ile başlamalı)"))
+                    break
         if ALTI_CIZILI.search(soru):
             kokte = len(ISARET.findall(soru)) >= 1
             siklarda = all(len(ISARET.findall(s)) == 1 for s in sec)

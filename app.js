@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SURUM = "1.1.1"; // sw.js içindeki SURUM ile aynı tutulur
+  var SURUM = "1.1.2"; // sw.js içindeki SURUM ile aynı tutulur
   var sayfa = document.getElementById("sayfa");
 
   /* ---------- yerel kayıt (localStorage yoksa sessizce bellekte kalır) ---------- */
