@@ -896,7 +896,7 @@ icerikKaydet("biyoloji-tyt", {
       dipnot: "Ağırlıkça protein %65, lipit %32, karbonhidrat %3'tür. Sayıca ise lipit > protein > karbonhidrat sırası vardır." },
     { id: "biy-tyt-hucre-q011", konu: "biy-tyt-hucre", maddeler: ["biy-tyt-hucre-008"], sabit: false,
       soru: "Aşağıdakilerden hangileri hücre zarından kolayca geçebilir?",
-      secenekler: ["Gazlar ve yağda çözünenler", "Glikojen ve selüloz moleküller", "Protein ve nişasta molekülleri", "DNA ve RNA molekülleri", "Büyük karbonhidrat molekülleri"], dogru: 0,
+      secenekler: ["Gazlar ve yağda çözünen moleküller", "Glikojen ve selüloz molekülleri", "Protein ve nişasta molekülleri", "DNA ve RNA molekülleri", "Büyük karbonhidrat molekülleri"], dogru: 0,
       dipnot: "Küçük moleküller, gazlar ve yağda çözünen maddeler zardan kolay geçer. Büyük moleküller zardan geçemez." },
     { id: "biy-tyt-hucre-q012", konu: "biy-tyt-hucre", maddeler: ["biy-tyt-hucre-009"], sabit: false,
       soru: "İnce bağırsakta emilim yüzeyini artıran, hücre zarının parmak şeklindeki uzantılarına ne ad verilir?",
