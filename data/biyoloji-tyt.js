@@ -856,7 +856,7 @@ icerikKaydet("biyoloji-tyt", {
       dipnot: "Enzimler biyolojik katalizördür; tepkimeyi başlatmaz, tepkime sonunda değişmeden çıkar ve tekrar kullanılabilir." },
     { id: "biy-tyt-bilesen-q073", konu: "biy-tyt-bilesen", maddeler: ["biy-tyt-bilesen-050"], sabit: false,
       soru: "Sıcaklığın enzimler üzerindeki etkisi için aşağıdakilerden hangisi doğrudur?",
-      secenekler: ["Düşük sıcaklık enzimi denatüre eder.", "Yüksek sıcaklık enzimi denatüre eder, düşük sıcaklık çalışmasını yavaşlatır.", "Yüksek sıcaklık enzim hızını sürekli artırır.", "Sıcaklık enzimi etkilemez.", "İkisi de enzimi denatüre eder."], dogru: 1,
+      secenekler: ["Düşük sıcaklık enzimi denatüre eder.", "Yüksek sıcaklık enzimi denatüre eder, düşük sıcaklık çalışmasını yavaşlatır.", "Yüksek sıcaklık enzim hızını sürekli artırır.", "Sıcaklık enzimi etkilemez.", "Hem yüksek hem düşük sıcaklık enzimi denatüre eder."], dogru: 1,
       dipnot: "Enzimler protein yapılıdır; yüksek sıcaklıkta bozulur, düşük sıcaklıkta yalnızca çalışması yavaşlar." },
     { id: "biy-tyt-bilesen-q074", konu: "biy-tyt-bilesen", maddeler: ["biy-tyt-bilesen-050"], sabit: false,
       soru: "Enzimlerle ilgili aşağıdakilerden hangisi doğrudur?",
