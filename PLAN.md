@@ -2,7 +2,7 @@
 
 Bu belge, sitenin yeniden yapımı için konuşularak alınan kararların tamamıdır. Siteyi geliştiren her oturum (Sonnet dahil) işe başlamadan önce bu belgeyi okur ve buradaki kurallara uyar. Bir karar değişirse önce bu belge güncellenir.
 
-**Durum (20 Ekim 2026):** **v1.0 yayında** (etiket `v1.0`, yayındaki 1.0-dev36). Sıradaki kilometre taşı **1.1 Kalite ve çeşitlilik** (§10). Ayrıntılı durum: `SUREC-RAPORU.md`.
+**Durum (21 Ekim 2026):** **v1.0 yayında** (etiket `v1.0`). **1.1.1 yayında:** TYT Türkçe taraması bitti (5 paket, kör çözücü kontrolünden geçti). Sıradaki kilometre taşı **1.1 Kalite ve çeşitlilik** (§10): Biyoloji ve Coğrafya taraması, kısa soru tipleri, motivasyon notları, yedek hatırlatması. Ayrıntılı durum: `SUREC-RAPORU.md`.
 
 ---
 
