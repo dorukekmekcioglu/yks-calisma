@@ -342,7 +342,7 @@ icerikKaydet("biyoloji-ayt", {
       dipnot: "Nörotransmitterin etkisinin kısa sürmesi, sinyalin net ve kontrollü kalmasını sağlar." },
     { id: "biy-ayt-sinir-q040", konu: "biy-ayt-sinir", maddeler: ["biy-ayt-sinir-031"], sabit: false,
       soru: "Aksonda iletim ile sinapsta iletim karşılaştırıldığında aşağıdakilerden hangisi doğrudur?",
-      secenekler: ["Sinapsta iletim kimyasal olduğundan aksondakinden daha yavaştır.", "Her ikisinde de iletim kimyasaldır.", "Her ikisi de aynı hızda gerçekleşir.", "Aksonda iletim elektriksel olduğundan sinapstakinden hızlıdır.", "Sinapsta iletim her iki yönde olabilir."], dogru: 3,
+      secenekler: ["Sinapsta iletim elektriksel olduğundan aksondakinden daha hızlıdır.", "Her ikisinde de iletim kimyasaldır.", "Her ikisi de aynı hızda gerçekleşir.", "Aksonda iletim elektriksel olduğundan sinapstakinden hızlıdır.", "Sinapsta iletim her iki yönde olabilir."], dogru: 3,
       dipnot: "Sinapsta kimyasal haberci salınıp reseptöre bağlandığı için ek zaman gerekir." },
     { id: "biy-ayt-sinir-q041", konu: "biy-ayt-sinir", maddeler: ["biy-ayt-sinir-080"], sabit: false,
       soru: "Aşağıdakilerden hangisinde sinaps bulunur?",
@@ -890,7 +890,7 @@ icerikKaydet("biyoloji-ayt", {
   
   
   
-  },
+ },
 
   testler: [
     { id: "biy-ayt-sinir-t1", konu: "biy-ayt-sinir", ad: "Nöron ve miyelin kılıf",
