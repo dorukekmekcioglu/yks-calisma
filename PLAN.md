@@ -146,7 +146,7 @@ Alt sekme çubuğu (eski plan, **4 sekme** idi; yukarıdaki karar geçerli):
 ### Test sonu aşk notları 💗
 - Motivasyon notlarından ayrıdır. Teste ve başarı oranına göre seçilir.
 - **3 basamak:** Düşük (%0–40) · Orta (%40–75) · Yüksek (%75–100)
-  - Örnek ton: düşükte "Pes etmek yok sevgilim, devam et", yüksekte "İşte böyle! Süpersin doktor hanım"
+  - Örnek ton: düşükte "Pes etmek yok sevgilim, devam et", yüksekte "İşte böyle! Süpersin"
 - **Kalpler içinde, bol pembeli** özel bir sonuç kartında gösterilir. Koyu modda da pembe kalır.
 - İlk örnekleri sevgilisi yazar, Claude aynı tonda çoğaltır, hepsi onaydan geçer.
 - **Mola hariç** her test sonunda (konu testi, karışık test, kısa tur) çıkar.

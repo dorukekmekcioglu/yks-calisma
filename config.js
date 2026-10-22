@@ -7,26 +7,37 @@
 var ISIM = "";
 
 // Motivasyon notları. "sevgili: true" olanlar senin yazdıkların; öncelikli
-// gösterilir ve altında küçük bir kalp çıkar.
-// ⚠️ GEÇİCİ ÖRNEKLER: asıl notlar gelince bu liste değişecek.
+// gösterilir ve altında küçük bir kalp çıkar. Kendi notlarını buraya
+// { metin: "...", sevgili: true } olarak ekle.
 var MOTIVASYON = [
-  { metin: "(örnek not) Bugün küçük bir adım bile adımdır.", sevgili: false },
-  { metin: "(örnek not) Dinlenmek de çalışmanın bir parçası. Su içmeyi unutma.", sevgili: false },
-  { metin: "(örnek not) Yorulursan mola ver; mola vermek vazgeçmek değildir.", sevgili: false },
-  { metin: "(örnek not) Seninle gurur duyuyorum.", sevgili: true }
+  { metin: "Bugün küçük bir adım bile adımdır.", sevgili: false },
+  { metin: "Yorulduysan mola ver. Mola vermek vazgeçmek değildir.", sevgili: false },
+  { metin: "Bir soruyu bilememek, onu öğrenmenin tam başlangıcıdır.", sevgili: false },
+  { metin: "Dünkünden bir şey fazla biliyorsan bugün güzel geçmiş demektir.", sevgili: false },
+  { metin: "Su içtin mi? Omuzlarını bir gevşet.", sevgili: false },
+  { metin: "Acele yok. Her gün biraz, sonunda çok.", sevgili: false },
+  { metin: "Yanlışlar seni geri götürmez, doğruyu daha sağlam yerleştirir.", sevgili: false },
+  { metin: "Bugün üç soru çözsen bile o üç soru senin.", sevgili: false },
+  { metin: "Kendine nazik ol. Bu yolda kendinle yarışıyorsun, kimseyle değil.", sevgili: false },
+  { metin: "Dinlenmiş bir kafa daha iyi hatırlar.", sevgili: false }
 ];
 
 // Test sonu aşk notları, başarı oranına göre 3 basamak.
 // Düşük: %0–40 · Orta: %40–75 · Yüksek: %75–100
-// ⚠️ GEÇİCİ ÖRNEKLER: asıl notlar gelince bu liste değişecek.
 var ASK_NOTLARI = {
   dusuk: [
-    "(örnek) Pes etmek yok sevgilim, devam et 💗"
+    "Pes etmek yok sevgilim, devam et 💗",
+    "Bugün zor geçmiş olabilir, yarın yine buradayız 💗",
+    "Bilmediklerin bulunmayı bekleyen yeni bilgiler 💗"
   ],
   orta: [
-    "(örnek) Çok güzel gidiyorsun, her tur biraz daha 💗"
+    "Çok güzel gidiyorsun, her tur biraz daha 💗",
+    "Yarısından fazlasını biliyorsun, gerisi gelir 💗",
+    "Emeğin görünüyor, devam 💗"
   ],
   yuksek: [
-    "(örnek) İşte böyle! Süpersin doktor hanım 💗"
+    "İşte böyle! Süpersin 💗",
+    "Harikaydın, bir mola hak ettin 💗",
+    "Seninle gurur duyuyorum 💗"
   ]
 };
