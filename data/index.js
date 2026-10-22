@@ -57,7 +57,7 @@ var KONULAR = [
   _k("tyt", "sosyal", "dunya", "Dünya'nın Şekli ve Hareketleri"),
   _k("tyt", "sosyal", "bolgeler", "Bölgeler", true),
   _k("tyt", "sosyal", "iklim", "Atmosfer, Hava Durumu ve İklim", true),
-  _k("tyt", "sosyal", "nufus", "Nüfus"),
+  _k("tyt", "sosyal", "nufus", "Nüfus", true),
   _k("tyt", "sosyal", "afet", "Doğal Afetler"),
   _k("tyt", "sosyal", "yapi", "Dünya'nın Yapısı ve Levha Tektoniği", true),
   _k("tyt", "sosyal", "jeoloji", "Jeolojik Zamanlar ve Türkiye'nin Jeolojik Geçmişi", true),
