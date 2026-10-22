@@ -1652,7 +1652,7 @@ icerikKaydet("biyoloji-tyt", {
       dipnot: "Algler ototrof ve kloroplastlıdır ama dokulaşmamıştır." },
     { id: "biy-tyt-canlilar-q048", konu: "biy-tyt-canlilar", maddeler: ["biy-tyt-canlilar-028"], sabit: false,
       soru: "Volvoks kolonisiyle ilgili aşağıdakilerden hangisi doğrudur?",
-      secenekler: ["Hücreleri arasında iş bölümü vardır.", "Hücreleri tek başına bağımsız yaşayabilir.", "Ayrılan her hücre tek başına yaşayabilir.", "Dokulaşmış çok hücreli bir canlıdır.", "Prokaryot hücrelerden oluşur."], dogru: 0,
+      secenekler: ["Hücreleri arasında iş bölümü vardır.", "Hücreleri tek başına bağımsız yaşayabilir.", "Doku düzeyinde organizasyon gösterir.", "Dokulaşmış çok hücreli bir canlıdır.", "Prokaryot hücrelerden oluşur."], dogru: 0,
       dipnot: "Pandorinada iş bölümü yoktur ve ayrılan hücre bağımsız yaşar." },
     { id: "biy-tyt-canlilar-q049", konu: "biy-tyt-canlilar", maddeler: ["biy-tyt-canlilar-029"], sabit: false,
       soru: "Mantarlarla ilgili aşağıdakilerden hangisi doğrudur?",
