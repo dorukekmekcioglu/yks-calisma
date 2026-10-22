@@ -10,16 +10,16 @@ var ISIM = "";
 // gösterilir ve altında küçük bir kalp çıkar. Kendi notlarını buraya
 // { metin: "...", sevgili: true } olarak ekle.
 var MOTIVASYON = [
-  { metin: "Bugün küçük bir adım bile adımdır aşkım.", sevgili: true },
-  { metin: "Yorulduysan mola ver sevgilim. Mola vermek vazgeçmek değildir.", sevgili: true },
-  { metin: "Bir soruyu bilememek, onu öğrenmenin tam başlangıcıdır hayatım.", sevgili: true },
-  { metin: "Dünkünden bir şey fazla biliyorsan bugün güzel geçmiş demektir aşkım.", sevgili: true },
-  { metin: "Su içtin mi hayatım? Omuzlarını bir gevşet.", sevgili: true },
-  { metin: "Acele yok sevgilim. Her gün biraz, sonunda çok.", sevgili: true },
-  { metin: "Yanlışlar seni geri götürmez aşkım, doğruyu daha sağlam yerleştirir.", sevgili: true },
-  { metin: "Bugün üç soru çözsen bile o üç soru senin hayatım.", sevgili: true },
-  { metin: "Kendine nazik ol sevgilim. Bu yolda kendinle yarışıyorsun, kimseyle değil.", sevgili: true },
-  { metin: "Dinlenmiş bir kafa daha iyi hatırlar aşkım. Biraz dinlen.", sevgili: true }
+  { metin: "Bugün küçük bir adım bile adımdır aşkım. Seni çok seviyorum.", sevgili: true },
+  { metin: "Yorulduysan mola ver sevgilim. Mola vermek vazgeçmek değildir. Seni çok seviyorum.", sevgili: true },
+  { metin: "Bir soruyu bilememek, onu öğrenmenin tam başlangıcıdır hayatım. Seni çok seviyorum.", sevgili: true },
+  { metin: "Dünkünden bir şey fazla biliyorsan bugün güzel geçmiş demektir aşkım. Seni çok seviyorum.", sevgili: true },
+  { metin: "Su içtin mi hayatım? Omuzlarını bir gevşet. Seni çok seviyorum.", sevgili: true },
+  { metin: "Acele yok sevgilim. Her gün biraz, sonunda çok. Seni çok seviyorum.", sevgili: true },
+  { metin: "Yanlışlar seni geri götürmez aşkım, doğruyu daha sağlam yerleştirir. Seni çok seviyorum.", sevgili: true },
+  { metin: "Bugün üç soru çözsen bile o üç soru senin hayatım. Seni çok seviyorum.", sevgili: true },
+  { metin: "Kendine nazik ol sevgilim. Bu yolda kendinle yarışıyorsun, kimseyle değil. Seni çok seviyorum.", sevgili: true },
+  { metin: "Dinlenmiş bir kafa daha iyi hatırlar aşkım. Biraz dinlen. Seni çok seviyorum.", sevgili: true }
 ];
 
 // Test sonu aşk notları, başarı oranına göre 3 basamak.

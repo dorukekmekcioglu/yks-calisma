@@ -2,7 +2,7 @@
 
 Bu belge, sitenin yeniden yapımı için konuşularak alınan kararların tamamıdır. Siteyi geliştiren her oturum (Sonnet dahil) işe başlamadan önce bu belgeyi okur ve buradaki kurallara uyar. Bir karar değişirse önce bu belge güncellenir.
 
-**Durum (22 Ekim 2026):** **v1.0 yayında** (etiket `v1.0`). **1.1.7 yayında (notlar kişiselleştirildi). Önceki: 1.1.6 (Coğrafya'ya Nüfus ve Doğal Afetler konuları eklendi, Opus kör çözüm kontrolünden geçti; Coğrafya 10/15 konu).** Önceki: **1.1.4:** TYT Türkçe, Biyoloji (TYT ve AYT) ve Coğrafya taramaları bitti, Opus kör çözüm kontrolünden geçti (1.1.3); motivasyon ve test sonu aşk notları girildi (1.1.4). Sevgilinin kendi notları gelince eklenecek. Sıradaki kilometre taşı **1.1 Kalite ve çeşitlilik** (§10): kısa soru tipleri, yedek hatırlatması, sevgilinin kendi notları. Ayrıntılı durum: `SUREC-RAPORU.md`.
+**Durum (22 Ekim 2026):** **v1.0 yayında** (etiket `v1.0`). **1.1.8 yayında (başkent oyunu kolaylaştırıldı, notların sonuna "Seni çok seviyorum" eklendi). Önceki: 1.1.7 (notlar kişiselleştirildi). Önceki: 1.1.6 (Coğrafya'ya Nüfus ve Doğal Afetler konuları eklendi, Opus kör çözüm kontrolünden geçti; Coğrafya 10/15 konu).** Önceki: **1.1.4:** TYT Türkçe, Biyoloji (TYT ve AYT) ve Coğrafya taramaları bitti, Opus kör çözüm kontrolünden geçti (1.1.3); motivasyon ve test sonu aşk notları girildi (1.1.4). Sevgilinin kendi notları gelince eklenecek. Sıradaki kilometre taşı **1.1 Kalite ve çeşitlilik** (§10): kısa soru tipleri, yedek hatırlatması, sevgilinin kendi notları. Ayrıntılı durum: `SUREC-RAPORU.md`.
 
 ---
 
