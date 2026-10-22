@@ -975,9 +975,16 @@
     var havuz = tum.filter(function (u) { return kita === "hepsi" || u[2] === kita; });
     if (havuz.length < 5) havuz = tum;
     var N = Math.min(10, havuz.length);
-    var sorular = karistir(havuz).slice(0, N).map(function (u) {
+    // Adı çok tanınmayan ülkeler seyrek gelsin: ağırlıklı rastgele seçim (düşük ağırlık = az şans).
+    var zor = {}; (window.MOLA_ZOR || []).forEach(function (a) { zor[a] = true; });
+    function agirlikli(dizi, n) {
+      return dizi.map(function (u) { return { u: u, k: Math.pow(Math.random(), 1 / (zor[u[0]] ? 0.2 : 1)) }; })
+        .sort(function (a, b) { return b.k - a.k; }).slice(0, n).map(function (x) { return x.u; });
+    }
+    var secilen = agirlikli(havuz, N);
+    var sorular = secilen.map(function (u) {
       var yanit = yon === "ub" ? u[1] : u[0];
-      var digerleri = karistir(havuz.filter(function (x) { return x !== u && (yon === "ub" ? x[1] : x[0]) !== yanit; })).slice(0, 4)
+      var digerleri = agirlikli(havuz.filter(function (x) { return x !== u && (yon === "ub" ? x[1] : x[0]) !== yanit; }), 4)
         .map(function (x) { return yon === "ub" ? x[1] : x[0]; });
       var sec = karistir([yanit].concat(digerleri));
       return { u: u, yanit: yanit, sec: sec, soru: yon === "ub" ? u[0] + " ülkesinin başkenti neresidir?" : u[1] + " hangi ülkenin başkentidir?" };

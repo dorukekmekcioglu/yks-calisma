@@ -52,3 +52,6 @@ window.MOLA_ULKELER = [
   ["Samoa", "Apia", "ok"], ["Tonga", "Nukualofa", "ok"], ["Vanuatu", "Port Vila", "ok"], ["Solomon Adaları", "Honiara", "ok"]
 ];
 window.MOLA_KITALAR = [["hepsi", "Hepsi"], ["av", "Avrupa"], ["as", "Asya"], ["af", "Afrika"], ["ka", "Kuzey ve Orta Amerika"], ["ga", "Güney Amerika"], ["ok", "Okyanusya"]];
+
+// Adı çok tanınmayan ülkeler: oyunda seyrek sorulur (ağırlığı düşüktür).
+window.MOLA_ZOR = ["Karadağ", "Moldova", "Kuzey Makedonya", "Butan", "Brunei", "Maldivler", "Bahreyn", "Umman", "Tacikistan", "Türkmenistan", "Kırgızistan", "Laos", "Eritre", "Cibuti", "Burkina Faso", "Gine-Bissau", "Cabo Verde", "Gambiya", "Sierra Leone", "Liberya", "Togo", "Benin", "Orta Afrika Cumhuriyeti", "Ekvator Ginesi", "Gabon", "Malavi", "Lesotho", "Botsvana", "Namibya", "Moritanya", "Nijer", "Çad", "Mali", "Güney Sudan", "Ruanda", "Gine", "Belize", "Barbados", "Trinidad ve Tobago", "Bahamalar", "Guyana", "Surinam", "Papua Yeni Gine", "Fiji", "Samoa", "Tonga", "Vanuatu", "Solomon Adaları", "Kongo Cumhuriyeti"];
